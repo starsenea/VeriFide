@@ -4,7 +4,7 @@
     "description": "Real time fact-checker",
     "version": "1.0",
     "action": {
-      "default_popup": "popup/popup.html"
+      "default_popup": "api/nano.html"
     },
     "icons": {
         "16": "images/icon-16.png",
@@ -17,6 +17,8 @@
         "type": "module"
     },
     "permissions": [
-        "storage"
+        "storage",
+        "ai"
     ]
+
 }
