@@ -1,23 +1,31 @@
 {
     "manifest_version": 3,
-    "name": "VeriFide",
-    "description": "Real time fact-checker",
+    "name": "Google Docs Text Enhancer",
+    "description": "A Chrome extension to read, write, and highlight text in Google Docs.",
     "version": "1.0",
+    "permissions": [
+      "identity",
+      "scripting",
+      "activeTab",
+      "storage"
+    ],
+    "host_permissions": [
+      "https://docs.google.com/*"
+    ],
+    "oauth2": {
+      "client_id": "716615658241-85ij2sjt3dssorubc8kk6lhf8lg6j9u4.apps.googleusercontent.com",
+      "scopes": ["https://www.googleapis.com/auth/documents"]
+    },
+    "background": {
+      "service_worker": "background.js"
+    },
     "action": {
       "default_popup": "popup/popup.html"
     },
-    "icons": {
-        "16": "images/icon-16.png",
-        "32": "images/icon-32.png",
-        "48": "images/icon-48.png",
-        "128": "images/icon-128.png"
-    },
-    "background": {
-        "service_worker": "background.js",
-        "type": "module"
-    },
-    "permissions": [
-        "storage"
+    "content_scripts": [
+      {
+        "matches": ["https://docs.google.com/*"],
+        "js": ["content.js"]
+      }
     ]
-
-}
+  }
