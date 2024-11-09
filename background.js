@@ -4,7 +4,7 @@
 async function authenticateUser() {
     return new Promise((resolve, reject) => {
       chrome.identity.launchWebAuthFlow({
-        url: `https://accounts.google.com/o/oauth2/auth?client_id=716615658241-85ij2sjt3dssorubc8kk6lhf8lg6j9u4.apps.googleusercontent.com&response_type=token&redirect_uri=https://${chrome.runtime.id}.chromiumapp.org&scope=https://www.googleapis.com/auth/documents`,
+        url: `https://accounts.google.com/o/oauth2/auth?client_id=61489958383-4c0ms10b4ajri5icod5m74j96v10c4vv.apps.googleusercontent.com&response_type=token&redirect_uri=https://dngnocadpdnnokdimanajoiilccjlfkh.chromiumapp.org&scope=https://www.googleapis.com/auth/documents`,
         interactive: true
       }, (redirectUrl) => {
         if (chrome.runtime.lastError) {
