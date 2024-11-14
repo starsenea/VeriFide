@@ -1,33 +1,46 @@
 let timeout;
-const userinput = [];
+let selectedMode = 'normal';
+const promptQueue = [];
 
-document.getElementById("submitButton").addEventListener('click', function() {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => { sendprompt() }, 500);
+document.querySelectorAll('.mode-button').forEach(button => {
+    button.addEventListener('click', () => {
+        selectedMode = button.getAttribute('data-mode') || 'normal';
+        document.querySelectorAll('.mode-button').forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        
+        // Clear queue and send prompt again when mode is changed
+        promptQueue.length = 0; 
+        sendPrompt();
+    });
 });
 
-function logprompt(prompt) {
-    return new Promise((resolve => {
-        userinput.push({prompt: prompt, resolve: resolve});
-        if (userinput.length === 1) {
-            processqueue();
+document.getElementById('prompt')?.addEventListener('input', () => {
+    clearTimeout(timeout);
+    timeout = setTimeout(sendPrompt, 500); // Delay in milliseconds
+});
+
+function enqueuePrompt(prompt) {
+    return new Promise(resolve => {
+        promptQueue.push({ prompt, resolve });
+        if (promptQueue.length === 1) {
+            processQueue();
         }
-    }));
+    });
 }
 
-async function processqueue() {
-    while (userinput.length > 0) {
-        const { prompt, resolve } = userinput[0];
+async function processQueue() {
+    while (promptQueue.length > 0) {
+        const { prompt, resolve } = promptQueue[0];
         await handlePrompt(prompt);
+        promptQueue.shift();
         resolve();
-        userinput.shift();
     }
 }
 
 async function handlePrompt(prompt) {
     const responseDiv = document.getElementById('response');
     const responseTimeDiv = document.getElementById('response-time');
-
+    
     if (prompt.trim() === '') {
         responseDiv.textContent = '';
         responseTimeDiv.textContent = '';
@@ -38,33 +51,36 @@ async function handlePrompt(prompt) {
 
     try {
         const startTime = new Date().getTime();
-        const canCreate = await window.ai.canCreateTextSession();
-
-        if (canCreate !== "no") {
-            const session = await window.ai.createTextSession();
-            responseDiv.textContent = ''; // Clear previous response
-            const stream = session.promptStreaming(`${selectedMode}: ${prompt}`);
-
-            let result = '';
-            let previousLength = 0;
-            for await (const chunk of stream) {
-                const newContent = chunk.slice(previousLength);
-                previousLength = chunk.length;
-                result += newContent;
-                responseDiv.textContent = result;
-            }
-
-            responseDiv.scrollIntoView({ behavior: 'smooth' });
-
-            // Wait a bit to ensure the stream has finished
-            await new Promise(resolve => setTimeout(resolve, 100));
-
-            const endTime = new Date().getTime();
-            const responseTime = endTime - startTime;
-            responseTimeDiv.textContent = `${responseTime}ms`;
-        } else {
-            throw new Error('Cannot create text session.');
+        
+        // Check if Prompt API is available
+        if (!('prompter' in chrome)) {
+            throw new Error('Prompt API is not available. Enable the flag in chrome://flags');
         }
+
+        // Create a prompt and start streaming
+        const prompter = await chrome.prompter.createPrompt();
+        responseDiv.textContent = ''; // Clear previous response
+        const stream = await prompter.streamText(`${selectedMode}: ${prompt}`);
+        
+        // Read the stream
+        const reader = stream.getReader();
+        let result = '';
+        
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            result += value;
+            responseDiv.textContent = result;
+
+            // Scroll to the bottom after updating the text content
+            const scrollDiv = document.createElement('div');
+            responseDiv.appendChild(scrollDiv);
+            scrollDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        const endTime = new Date().getTime();
+        const responseTime = endTime - startTime;
+        responseTimeDiv.textContent = `${responseTime}ms`;
     } catch (error) {
         console.error(error);
         responseDiv.textContent = 'Error: ' + error.message;
@@ -72,22 +88,19 @@ async function handlePrompt(prompt) {
     }
 }
 
-async function sendprompt() {
-    // Get the value from the input field (text box)
-    const prompt = document.getElementById("userInput").value;
-    await logprompt(prompt);  // Pass the prompt to logprompt function
+async function sendPrompt() {
+    const prompt = document.getElementById('prompt').value;
+    await enqueuePrompt(prompt);
 }
 
 function updateClock() {
     const now = new Date();
-    const hours = now.getHours();
+    const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     const seconds = String(now.getSeconds()).padStart(2, '0');
-    const period = hours >= 12 ? 'PM' : 'AM';
-    const displayHours = String(hours % 12 || 12).padStart(2, '0');
-    const timeString = `${displayHours}:${minutes}:${seconds} ${period}`;
+    const timeString = `${hours}:${minutes}:${seconds} PM`;
     document.getElementById('clock').textContent = timeString;
-
+    
     const dateString = now.toDateString();
     document.getElementById('date').textContent = dateString;
 
@@ -96,5 +109,16 @@ function updateClock() {
     document.getElementById('browser-info').textContent = chromeVersion;
 }
 
+async function getIPAddress() {
+    try {
+        const response = await fetch('https://api.ipify.org?format=json');
+        const data = await response.json();
+        document.getElementById('ip-address').textContent = `IP Address: ${data.ip}`;
+    } catch (error) {
+        console.error('Error fetching IP address:', error);
+    }
+}
+
 setInterval(updateClock, 1000);
-updateClock();
+updateClock(); // Initial call to set the clock immediately
+getIPAddress(); // Fetch IP address on load
