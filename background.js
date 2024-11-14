@@ -1,124 +1,30 @@
-let timeout;
-let selectedMode = 'normal';
-const promptQueue = [];
-
-document.querySelectorAll('.mode-button').forEach(button => {
-    button.addEventListener('click', () => {
-        selectedMode = button.getAttribute('data-mode') || 'normal';
-        document.querySelectorAll('.mode-button').forEach(btn => btn.classList.remove('active'));
-        button.classList.add('active');
-        
-        // Clear queue and send prompt again when mode is changed
-        promptQueue.length = 0; 
-        sendPrompt();
-    });
+chrome.runtime.onInstalled.addListener(() => {
+    console.log('Extension Installed');
 });
 
-document.getElementById('prompt')?.addEventListener('input', () => {
-    clearTimeout(timeout);
-    timeout = setTimeout(sendPrompt, 500); // Delay in milliseconds
+chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+    if (request.type === 'SEND_PROMPT') {
+        const prompt = request.prompt;
+
+        try {
+            // Create a prompter instance and send the prompt
+            const prompter = await chrome.prompter.createPrompt();
+            const stream = await prompter.streamText(prompt);
+
+            // Read the stream response
+            let result = '';
+            const reader = stream.getReader();
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                result += value;
+            }
+
+            sendResponse({ result });
+        } catch (error) {
+            console.error("Error with Prompt API:", error);
+            sendResponse({ result: `Error: ${error.message}` });
+        }
+    }
+    return true; // Indicate async response
 });
-
-function enqueuePrompt(prompt) {
-    return new Promise(resolve => {
-        promptQueue.push({ prompt, resolve });
-        if (promptQueue.length === 1) {
-            processQueue();
-        }
-    });
-}
-
-async function processQueue() {
-    while (promptQueue.length > 0) {
-        const { prompt, resolve } = promptQueue[0];
-        await handlePrompt(prompt);
-        promptQueue.shift();
-        resolve();
-    }
-}
-
-async function handlePrompt(prompt) {
-    const responseDiv = document.getElementById('response');
-    const responseTimeDiv = document.getElementById('response-time');
-    
-    if (prompt.trim() === '') {
-        responseDiv.textContent = '';
-        responseTimeDiv.textContent = '';
-        return;
-    }
-
-    responseDiv.textContent = 'Waiting for response...';
-
-    try {
-        const startTime = new Date().getTime();
-        
-        // Check if Prompt API is available
-        if (!('prompter' in chrome)) {
-            throw new Error('Prompt API is not available. Enable the flag in chrome://flags');
-        }
-
-        // Create a prompt and start streaming
-        const prompter = await chrome.prompter.createPrompt();
-        responseDiv.textContent = ''; // Clear previous response
-        const stream = await prompter.streamText(`${selectedMode}: ${prompt}`);
-        
-        // Read the stream
-        const reader = stream.getReader();
-        let result = '';
-        
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            result += value;
-            responseDiv.textContent = result;
-
-            // Scroll to the bottom after updating the text content
-            const scrollDiv = document.createElement('div');
-            responseDiv.appendChild(scrollDiv);
-            scrollDiv.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        const endTime = new Date().getTime();
-        const responseTime = endTime - startTime;
-        responseTimeDiv.textContent = `${responseTime}ms`;
-    } catch (error) {
-        console.error(error);
-        responseDiv.textContent = 'Error: ' + error.message;
-        responseTimeDiv.textContent = '';
-    }
-}
-
-async function sendPrompt() {
-    const prompt = document.getElementById('prompt').value;
-    await enqueuePrompt(prompt);
-}
-
-function updateClock() {
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    const timeString = `${hours}:${minutes}:${seconds} PM`;
-    document.getElementById('clock').textContent = timeString;
-    
-    const dateString = now.toDateString();
-    document.getElementById('date').textContent = dateString;
-
-    const userAgent = navigator.userAgent;
-    const chromeVersion = userAgent.match(/Chrome\/[\d.]+/)?.[0] || 'Chrome/unknown';
-    document.getElementById('browser-info').textContent = chromeVersion;
-}
-
-async function getIPAddress() {
-    try {
-        const response = await fetch('https://api.ipify.org?format=json');
-        const data = await response.json();
-        document.getElementById('ip-address').textContent = `IP Address: ${data.ip}`;
-    } catch (error) {
-        console.error('Error fetching IP address:', error);
-    }
-}
-
-setInterval(updateClock, 1000);
-updateClock(); // Initial call to set the clock immediately
-getIPAddress(); // Fetch IP address on load

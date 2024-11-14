@@ -17,6 +17,8 @@
     "type": "module"
   },
   "permissions": [
-    "storage"
-  ]
+    "storage",
+    "aiLanguageModelOriginTrial"
+  ],
+  "trial_tokens": ["AsVURHa07VNjLqlOHJKGs3bLtgxXiJmVeyeoD4FUvfcuZB/dtDsAdaGIVx/5qgxfjTTiDSyx4EudDdoPJpscYAcAAAB4eyJvcmlnaW4iOiJjaHJvbWUtZXh0ZW5zaW9uOi8vZG5nbm9jYWRwZG5ub2tkaW1hbmFqb2lpbGNjamxma2giLCJmZWF0dXJlIjoiQUlQcm9tcHRBUElGb3JFeHRlbnNpb24iLCJleHBpcnkiOjE3NjA0ODYzOTl9"]
 }
