@@ -1,124 +1,60 @@
-let timeout;
-let selectedMode = 'normal';
-const promptQueue = [];
-
-document.querySelectorAll('.mode-button').forEach(button => {
-    button.addEventListener('click', () => {
-        selectedMode = button.getAttribute('data-mode') || 'normal';
-        document.querySelectorAll('.mode-button').forEach(btn => btn.classList.remove('active'));
-        button.classList.add('active');
+// Remove DOM-related code and handle message passing
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    console.log("Message received in background:", request); // Debug log 1
+    
+    if (request.type === "processPrompt") {
+        console.log("Processing prompt:", request.prompt); // Debug log 2
         
-        // Clear queue and send prompt again when mode is changed
-        promptQueue.length = 0; 
-        sendPrompt();
-    });
-});
-
-document.getElementById('prompt')?.addEventListener('input', () => {
-    clearTimeout(timeout);
-    timeout = setTimeout(sendPrompt, 500); // Delay in milliseconds
-});
-
-function enqueuePrompt(prompt) {
-    return new Promise(resolve => {
-        promptQueue.push({ prompt, resolve });
-        if (promptQueue.length === 1) {
-            processQueue();
-        }
-    });
-}
-
-async function processQueue() {
-    while (promptQueue.length > 0) {
-        const { prompt, resolve } = promptQueue[0];
-        await handlePrompt(prompt);
-        promptQueue.shift();
-        resolve();
+        handlePrompt(request.prompt)
+            .then(response => {
+                console.log("Sending response:", response); // Debug log 3
+                sendResponse(response);
+            })
+            .catch(error => {
+                console.error("Error:", error); // Debug log 4
+                sendResponse({ 
+                    success: false, 
+                    text: error.message 
+                });
+            });
+        return true;
     }
-}
+});
 
+// Add this to check if script loads
+console.log("Background script loaded");
+
+/**
+ * Handles the prompt processing and returns a Promise
+ */
 async function handlePrompt(prompt) {
-    const responseDiv = document.getElementById('response');
-    const responseTimeDiv = document.getElementById('response-time');
+    const startTime = Date.now();
+
+    // Check if the languageModel API is available
+    if (!ai || !ai.languageModel) {
+        throw new Error('AI Language Model API is not available.');
+    }
+
+    // Initialize the language model with more specific instructions
+    const languageModel = await ai.languageModel.create({
+        systemPrompt: `You are a fact-checking assistant. Your task is to analyze the given text and provide a clear, concise response in English. 
+        Focus on verifying claims and identifying potential misinformation. 
+        Respond in a professional, straightforward manner.`
+    });
     
-    if (prompt.trim() === '') {
-        responseDiv.textContent = '';
-        responseTimeDiv.textContent = '';
-        return;
-    }
+    // Use the initialized model instance with explicit language preference
+    const responseText = await languageModel.prompt(prompt, {
+        temperature: 0.7,
+        maxOutputTokens: 800
+    });
 
-    responseDiv.textContent = 'Waiting for response...';
+    const endTime = Date.now();
+    const responseTime = endTime - startTime;
+    console.log(`Response Time: ${responseTime}ms`);
 
-    try {
-        const startTime = new Date().getTime();
-        
-        // Check if Prompt API is available
-        if (!('prompter' in chrome)) {
-            throw new Error('Prompt API is not available. Enable the flag in chrome://flags');
-        }
-
-        // Create a prompt and start streaming
-        const prompter = await chrome.prompter.createPrompt();
-        responseDiv.textContent = ''; // Clear previous response
-        const stream = await prompter.streamText(`${selectedMode}: ${prompt}`);
-        
-        // Read the stream
-        const reader = stream.getReader();
-        let result = '';
-        
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            result += value;
-            responseDiv.textContent = result;
-
-            // Scroll to the bottom after updating the text content
-            const scrollDiv = document.createElement('div');
-            responseDiv.appendChild(scrollDiv);
-            scrollDiv.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        const endTime = new Date().getTime();
-        const responseTime = endTime - startTime;
-        responseTimeDiv.textContent = `${responseTime}ms`;
-    } catch (error) {
-        console.error(error);
-        responseDiv.textContent = 'Error: ' + error.message;
-        responseTimeDiv.textContent = '';
-    }
+    return { 
+        success: true, 
+        text: responseText,
+        responseTime: responseTime 
+    };
 }
-
-async function sendPrompt() {
-    const prompt = document.getElementById('prompt').value;
-    await enqueuePrompt(prompt);
-}
-
-function updateClock() {
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-    const timeString = `${hours}:${minutes}:${seconds} PM`;
-    document.getElementById('clock').textContent = timeString;
-    
-    const dateString = now.toDateString();
-    document.getElementById('date').textContent = dateString;
-
-    const userAgent = navigator.userAgent;
-    const chromeVersion = userAgent.match(/Chrome\/[\d.]+/)?.[0] || 'Chrome/unknown';
-    document.getElementById('browser-info').textContent = chromeVersion;
-}
-
-async function getIPAddress() {
-    try {
-        const response = await fetch('https://api.ipify.org?format=json');
-        const data = await response.json();
-        document.getElementById('ip-address').textContent = `IP Address: ${data.ip}`;
-    } catch (error) {
-        console.error('Error fetching IP address:', error);
-    }
-}
-
-setInterval(updateClock, 1000);
-updateClock(); // Initial call to set the clock immediately
-getIPAddress(); // Fetch IP address on load
