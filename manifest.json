@@ -8,12 +8,22 @@
   "permissions": [
     "activeTab",
     "scripting",
-    "ai"
+    "ai",
+    "identity",
+    "identity.email",
+    "tabs"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "<all_urls>",
+    "https://docs.googleapis.com/"
   ],
   "action": {
     "default_popup": "popup/popup.html"
+  },
+  "oauth2": {
+    "client_id": "716615658241-85ij2sjt3dssorubc8kk6lhf8lg6j9u4.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/documents.readonly"
+    ]
   }
 }

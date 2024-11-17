@@ -6,64 +6,58 @@
     <title>VeriFide</title>
     <link rel="stylesheet" href="bulma.min.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
-<style>
-    .title {
-        font-family: 'Host Grotesk', sans-serif;
-        margin-bottom: 20px;
-    }
-    .field {
-        font-family: 'Host Grotesk';
-    }
-    .control {
-        font-family: 'Host Grotesk';
-    }
-    .container {
-        max-width: 275px;
-        padding: 20px;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-    }
-    textarea.input {
-        font-family: 'Host Grotesk';
-        width: 100%; 
-        max-width: 220px;
-        box-sizing: border-box; 
-        height: 150px;
-        padding-top: 0;  
-        line-height: normal;  
-    
-    }
-    .button-container {
-        margin-top: 20px;
-    }
-    .button-primary {
-        background-color: #4caf50;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-</style>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+    <style>
+        .title {
+            font-family: 'Host Grotesk', sans-serif;
+            margin-bottom: 20px;
+        }
+        .field {
+            font-family: 'Host Grotesk';
+        }
+        .control {
+            font-family: 'Host Grotesk';
+        }
+        .container {
+            max-width: 275px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        textarea.input {
+            font-family: 'Host Grotesk';
+            width: 100%; 
+            max-width: 220px;
+            box-sizing: border-box; 
+            height: 150px;
+            padding-top: 0;  
+            line-height: normal;  
+        
+        }
+        .button-container {
+            margin-top: 20px;
+        }
+        .button-primary {
+            background-color: #4caf50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
     
     <div class="container m-3 is-rounded">
         <h1 class="title">VeriFide</h1>
-        <div class="field">
-            <label class="label">Enter Text</label>
-            <div class="control">
-                <textarea class="input m-2" id="userInput" placeholder="Type something here..."></textarea>
-            </div>
-        </div>
-        <button class="button is-primary" id="submitButton">Fact-Check</button>
+        <button class="button is-primary" id="submitButton">Fact-Check Current Document</button>
         <div id="response-section">
             <div id="response-time"></div>
             <div id="response"></div>
         </div>
     </div>
-    <script src="popup.js"></script>
+    <script type="module" src="popup.js"></script>
 </body>
 </html>

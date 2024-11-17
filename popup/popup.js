@@ -1,35 +1,44 @@
-document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM fully loaded");
-    
+import docsService from '../services/docsService.js';
+
+document.addEventListener('DOMContentLoaded', async () => {
     const submitButton = document.getElementById("submitButton");
-    const userInput = document.getElementById("userInput");
     const responseDiv = document.getElementById("response");
     
-    // Verify elements are found
-    console.log("Elements found:", {
-        submitButton: !!submitButton,
-        userInput: !!userInput,
-        responseDiv: !!responseDiv
-    });
+    try {
+        await docsService.initialize();
+        console.log("Google Docs API initialized");
+    } catch (error) {
+        console.error("Failed to initialize Google Docs API:", error);
+        responseDiv.textContent = "Error: Failed to initialize Google Docs API";
+    }
 
     submitButton.addEventListener("click", async () => {
-        console.log("Button clicked");
-        
-        const prompt = userInput.value;
-        console.log("Input value:", prompt);
-        
         responseDiv.textContent = "Loading...";
         
         try {
-            console.log("Sending message to background...");
-            chrome.runtime.sendMessage({ type: "processPrompt", prompt: prompt }, (response) => {
+            // Get current tab
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            
+            // Extract doc ID from URL
+            const docId = extractDocId(tab.url);
+            if (!docId) {
+                responseDiv.textContent = "Please open a Google Doc to analyze";
+                return;
+            }
+
+            // Get document content
+            const documentContent = await docsService.getDocContent(docId);
+            
+            chrome.runtime.sendMessage({ 
+                type: "processPrompt", 
+                prompt: documentContent 
+            }, (response) => {
                 if (chrome.runtime.lastError) {
                     console.error("Runtime error:", chrome.runtime.lastError);
                     responseDiv.textContent = "Error: Could not connect to background script";
                     return;
                 }
                 
-                console.log("Received response:", response);
                 if (response && response.text) {
                     responseDiv.textContent = response.text;
                     document.getElementById("response-time").textContent = 
@@ -39,8 +48,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         } catch (error) {
-            console.error("Error sending message:", error);
+            console.error("Error processing document:", error);
             responseDiv.textContent = "Error: " + error.message;
         }
     });
 });
+
+function extractDocId(url) {
+    // Handle both edit and view URLs
+    const regex = /\/document\/d\/([a-zA-Z0-9-_]+)/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+}

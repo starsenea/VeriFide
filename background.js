@@ -28,33 +28,48 @@ console.log("Background script loaded");
  * Handles the prompt processing and returns a Promise
  */
 async function handlePrompt(prompt) {
+    if (!prompt || prompt.trim().length === 0) {
+        throw new Error('Empty document content received');
+    }
     const startTime = Date.now();
 
-    // Check if the languageModel API is available
     if (!ai || !ai.languageModel) {
         throw new Error('AI Language Model API is not available.');
     }
 
-    // Initialize the language model with more specific instructions
-    const languageModel = await ai.languageModel.create({
-        systemPrompt: `You are a fact-checking assistant. Your task is to analyze the given text and provide a clear, concise response in English. 
-        Focus on verifying claims and identifying potential misinformation. 
-        Respond in a professional, straightforward manner.`
+    // First model: Just get the correct facts
+    const factModel = await ai.languageModel.create({
+        systemPrompt: `You are a fact database. When given a statement, output ONLY the correct version of any incorrect facts. Output ONLY the corrected word or phrase, nothing else.`
     });
     
-    // Use the initialized model instance with explicit language preference
-    const responseText = await languageModel.prompt(prompt, {
-        temperature: 0.7,
-        maxOutputTokens: 800
+    // Get just the correction
+    const correction = await factModel.prompt(`What is the correct version of this fact: ${prompt}`, {
+        temperature: 0.0,
+        maxOutputTokens: 10,  // Very limited to force brief response
+        topP: 0.5,
+        topK: 50
+    });
+
+    // Second model: Replace the incorrect fact with the correction
+    const replacementModel = await ai.languageModel.create({
+        systemPrompt: `You are a text editor. Replace any incorrect facts in the input with the provided correction. Return the complete corrected text only.`
+    });
+    
+    const finalText = await replacementModel.prompt(`Original text: "${prompt}"
+Correction: "${correction}"
+Return the text with the correction applied:`, {
+        temperature: 0.0,
+        maxOutputTokens: prompt.length,
+        topP: 0.6,
+        topK: 70
     });
 
     const endTime = Date.now();
     const responseTime = endTime - startTime;
-    console.log(`Response Time: ${responseTime}ms`);
 
     return { 
         success: true, 
-        text: responseText,
+        text: finalText.trim(),
         responseTime: responseTime 
     };
 }
