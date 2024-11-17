@@ -13,51 +13,40 @@
             font-family: 'Host Grotesk', sans-serif;
             margin-bottom: 20px;
         }
-        .field {
-            font-family: 'Host Grotesk';
-        }
-        .control {
-            font-family: 'Host Grotesk';
-        }
         .container {
             max-width: 275px;
             padding: 20px;
             border: 1px solid #e0e0e0;
             border-radius: 8px;
         }
-        textarea.input {
+        #response {
+            margin-top: 15px;
+            padding: 10px;
+            min-height: 50px;
+            white-space: pre-wrap;
             font-family: 'Host Grotesk';
-            width: 100%; 
-            max-width: 220px;
-            box-sizing: border-box; 
-            height: 150px;
-            padding-top: 0;  
-            line-height: normal;  
-        
+            line-height: 1.4;
         }
-        .button-container {
-            margin-top: 20px;
+        .loading {
+            color: #666;
+            font-style: italic;
         }
-        .button-primary {
-            background-color: #4caf50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
+        .error {
+            color: #d32f2f;
+        }
+        .success {
+            color: #388e3c;
         }
     </style>
 </head>
 <body>
-    
     <div class="container m-3 is-rounded">
         <h1 class="title">VeriFide</h1>
         <button class="button is-primary" id="submitButton">Fact-Check Current Document</button>
         <div id="response-section">
-            <div id="response-time"></div>
-            <div id="response"></div>
+            <div id="response" class="loading">Ready to fact check!</div>
         </div>
     </div>
-    <script type="module" src="popup.js"></script>
+    <script src="popup.js"></script>
 </body>
 </html>

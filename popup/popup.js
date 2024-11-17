@@ -1,62 +1,114 @@
-import docsService from '../services/docsService.js';
-
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
     const submitButton = document.getElementById("submitButton");
     const responseDiv = document.getElementById("response");
     
-    try {
-        await docsService.initialize();
-        console.log("Google Docs API initialized");
-    } catch (error) {
-        console.error("Failed to initialize Google Docs API:", error);
-        responseDiv.textContent = "Error: Failed to initialize Google Docs API";
-    }
-
     submitButton.addEventListener("click", async () => {
-        responseDiv.textContent = "Loading...";
-        
         try {
+            responseDiv.textContent = "Getting document content...";
+            
             // Get current tab
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-            
-            // Extract doc ID from URL
-            const docId = extractDocId(tab.url);
-            if (!docId) {
-                responseDiv.textContent = "Please open a Google Doc to analyze";
-                return;
+            if (!tab?.url?.includes('docs.google.com/document')) {
+                throw new Error('Please open a Google Doc first');
             }
 
-            // Get document content
-            const documentContent = await docsService.getDocContent(docId);
+            // Extract document ID from URL
+            const docId = tab.url.match(/\/document\/d\/([a-zA-Z0-9-_]+)/)?.[1];
+            if (!docId) {
+                throw new Error('Could not find document ID');
+            }
+
+            console.log('Document ID:', docId);
+
+            // Get auth token with proper error handling
+            let token;
+            try {
+                token = await new Promise((resolve, reject) => {
+                    chrome.identity.getAuthToken({ interactive: true }, (token) => {
+                        if (chrome.runtime.lastError) {
+                            reject(chrome.runtime.lastError);
+                        } else {
+                            resolve(token);
+                        }
+                    });
+                });
+                console.log('Got auth token');
+            } catch (error) {
+                console.error('Auth error:', error);
+                throw new Error('Failed to authenticate: ' + error.message);
+            }
             
-            chrome.runtime.sendMessage({ 
-                type: "processPrompt", 
-                prompt: documentContent 
-            }, (response) => {
+            // Fetch document content
+            const response = await fetch(`https://docs.googleapis.com/v1/documents/${docId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.text();
+                console.error('API Error:', errorData);
+                throw new Error(`Failed to fetch document content: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Raw API response:', data);
+            
+            // Extract text content from document
+            let documentContent = '';
+            if (data.body?.content) {
+                documentContent = data.body.content
+                    .filter(item => item.paragraph)
+                    .map(item => {
+                        const paragraphText = item.paragraph.elements
+                            .map(element => element.textRun?.content || '')
+                            .join('')
+                            .trim();
+                        if (paragraphText) {
+                            console.log('Found paragraph:', paragraphText);
+                            return paragraphText;
+                        }
+                        return null;
+                    })
+                    .filter(text => text) // Remove empty paragraphs
+                    .join('\n')
+                    .trim();
+            }
+
+            console.log('Final extracted content:', documentContent);
+
+            if (!documentContent) {
+                throw new Error('No document content found');
+            }
+
+            responseDiv.textContent = "Analyzing content...";
+            
+            console.log('Sending to background:', documentContent);
+            chrome.runtime.sendMessage({
+                type: 'checkDocument',
+                content: documentContent
+            }, response => {
+                console.log('Response from background:', response);
                 if (chrome.runtime.lastError) {
-                    console.error("Runtime error:", chrome.runtime.lastError);
-                    responseDiv.textContent = "Error: Could not connect to background script";
+                    console.error('Runtime error:', chrome.runtime.lastError);
+                    responseDiv.textContent = "Error: " + chrome.runtime.lastError.message;
                     return;
                 }
                 
-                if (response && response.text) {
+                if (response?.error) {
+                    console.error('Response error:', response.error);
+                    responseDiv.textContent = "Error: " + response.error;
+                } else if (response?.text) {
+                    console.log('Success:', response.text);
                     responseDiv.textContent = response.text;
-                    document.getElementById("response-time").textContent = 
-                        `Response time: ${response.responseTime}ms`;
                 } else {
-                    responseDiv.textContent = "Error retrieving response.";
+                    responseDiv.textContent = "Error: Invalid response format";
                 }
             });
+
         } catch (error) {
-            console.error("Error processing document:", error);
+            console.error("Error:", error);
             responseDiv.textContent = "Error: " + error.message;
         }
     });
 });
-
-function extractDocId(url) {
-    // Handle both edit and view URLs
-    const regex = /\/document\/d\/([a-zA-Z0-9-_]+)/;
-    const match = url.match(regex);
-    return match ? match[1] : null;
-}
