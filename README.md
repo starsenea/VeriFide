@@ -102,11 +102,14 @@ Common issues and solutions:
 
 ## License
 
-[Add your chosen license here]
+Hopefuly this will be open source soon!
 
 ## Contact
 
-[Add your contact information here]
+#### Ethan Zhang
+- Email: ZhangEthan@icloud.com | Zhan5173@purdue.edu
+- LinkedIn: [Ethan Zhang](https://www.linkedin.com/in/ez24/)
+
 
 ## Setup for Developers
 1. Clone the repository
