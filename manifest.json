@@ -2,16 +2,26 @@
   "manifest_version": 3,
   "name": "VeriFide",
   "version": "1.0",
+  "description": "AI-powered fact checking for Google Docs",
   "background": {
-    "service_worker": "./background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "permissions": [
     "activeTab",
     "scripting",
+    "identity",
     "ai"
   ],
+  "oauth2": {
+    "client_id": "716615658241-46o5fb1iv0olp78s5qnlu19o3ddnar9t.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/documents.readonly"
+    ]
+  },
   "host_permissions": [
-    "<all_urls>"
+    "https://docs.google.com/*",
+    "https://www.googleapis.com/*"
   ],
   "action": {
     "default_popup": "popup/popup.html"
