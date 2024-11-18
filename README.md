@@ -107,9 +107,12 @@ Hopefuly this will be open source soon!
 ## Contact
 
 #### Ethan Zhang
-- Email: ZhangEthan@icloud.com | Zhan5173@purdue.edu
+- Email: zhangethan@icloud.com | zhan5173@purdue.edu
 - LinkedIn: [Ethan Zhang](https://www.linkedin.com/in/ez24/)
 
+#### Rishi Padhye
+- Email: rishipadhye@gmail.com | rpadhye@purdue.edu
+- LinkedIn: [Rishi Padhye](https://www.linkedin.com/in/rpadhye/)
 
 ## Setup for Developers
 1. Clone the repository
