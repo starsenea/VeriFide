@@ -2,9 +2,9 @@ console.log('Background script loaded and ready');
 
 // AI model parameters
 const AI_PARAMS = {
-    temperature: 0,
-    topK: 0.1,
-    topP: 0.1
+    temperature: 0.1,
+    topK: 1,
+    topP: 0.9
 };
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -51,29 +51,31 @@ Examples:
                 // If objective, proceed with fact checking
                 console.log('Creating fact-check session...');
                 const session = await ai.languageModel.create({
-                    systemPrompt: `You are a fact checker. Your task is to correct factual errors in statements.
+                    systemPrompt: `You are a minimal fact checker. Your task is to verify statements with minimal changes.
 
 RULES:
-1. If you find a factual error, provide ONLY the corrected statement
-2. If no errors, respond with exactly "No factual errors found."
-3. Do not include any markers, brackets, or explanations
+1. If statement is correct: Return the EXACT original statement
+2. If incorrect: Change ONLY the incorrect words/numbers, keeping all other words identical
+3. NO explanations, NO extra text
+4. NO "Correction:" prefix or any other additions
 
 Examples:
 
-Input: "The sun revolves around earth"
-Output: "The Earth revolves around the Sun"
+Input: "The Earth is flat"
+Output: "The Earth is spherical"
 
-Input: "Water boils at 50c"
-Output: "Water boils at 100°C"
+Input: "Humans need oxygen to breathe"
+Output: "Humans need oxygen to breathe"
 
-Input: "The Earth orbits the Sun"
-Output: "No factual errors found"
+Input: "The sun revolves around the Earth"
+Output: "The Earth revolves around the sun"
 
-REMEMBER: Return ONLY the corrected statement or "No factual errors found"`,
-                    temperature: AI_PARAMS.temperature,
+Input: "Water freezes at 50 degrees Celsius"
+Output: "Water freezes at 0 degrees Celsius"`,
+                    temperature: 0.1,
                     maxOutputTokens: estimatedTokens,
-                    topK: AI_PARAMS.topK,
-                    topP: AI_PARAMS.topP
+                    topK: 50,
+                    topP: 0.6
                 });
 
                 console.log('Sending prompt to AI...');
