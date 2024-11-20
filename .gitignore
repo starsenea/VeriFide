@@ -9,3 +9,4 @@ credentials.json
 .env.local
 .env.development
 .env.production 
+manifest.json
