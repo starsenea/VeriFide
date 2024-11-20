@@ -9,15 +9,22 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
     <style>
+        html, body {
+            background-color: #fdefca;
+            width: 300px;
+        }
         .title {
             font-family: 'Host Grotesk', sans-serif;
             margin-bottom: 20px;
+            color: #000;
         }
         .container {
-            max-width: 300px;
-            padding: 20px;
-            border: 3px solid #656565;
-            border-radius: 8px;
+            max-width: 400px;
+            max-height: 200px;
+            padding: 15px;
+            color: #fdefca;
+            border: 3px solid #000;
+            border-radius: 30px;
         }
         #response {
             margin-top: 15px;
@@ -26,9 +33,10 @@
             white-space: pre-wrap;
             font-family: 'Host Grotesk', sans-serif;
             line-height: 1.4;
+            
         }
         .loading {
-            color: #606060;
+            color: #000000;
             font-style: italic;
         }
         .error {
@@ -37,12 +45,16 @@
         .success {
             color: #388e3c;
         }
+        .button {
+            color: #0000
+        }
+        body
     </style>
 </head>
-<body>
+<body style="background-color: #fdefca">
     <div class="container m-3 is-rounded">
-        <img src="Untitled design.jpg" alt="Description of the image">
-        <button class="button is-primary" id="submitButton">Fact-Check Current Document</button>
+        <h1 class="title">VeriFide</h1>
+        <button class="button is-primary" style="background-color: #000; color: white;" id="submitButton">Fact-Check Current Document</button>
         <div id="response-section">
             <div id="response" class="loading">Ready to fact check!</div>
         </div>

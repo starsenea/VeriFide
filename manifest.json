@@ -25,5 +25,11 @@
   ],
   "action": {
     "default_popup": "popup/popup.html"
+  },
+  "icons": {
+    "32": "images/VF32.png",
+    "48": "images/VF48.png",
+    "64": "images/VF64.png",
+    "128": "images/VF128.png"
   }
 }
