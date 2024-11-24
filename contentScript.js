@@ -26,13 +26,65 @@ function createMenuButton() {
         background-color: #f9fbfd; 
         border-radius: 4px;  
         margin: 0 2px;         
-        transition: background-color 0.2s;
+        transition: all 0.2s;
         height: 22px;
         line-height: 22px;
         padding: 0 4px;
         letter-spacing: 0.4px;
+        position: relative;
+        overflow: hidden;
     `;
     
+    // Add gradient overlay div
+    const gradientOverlay = document.createElement('div');
+    gradientOverlay.className = 'gradient-overlay';
+    gradientOverlay.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 200%;
+        height: 100%;
+        background: linear-gradient(
+            90deg, 
+            transparent 0%,
+            rgba(255,255,255,0.8) 25%,
+            rgba(255,255,255,0.8) 50%,
+            transparent 100%
+        );
+        opacity: 0;
+        transition: opacity 0.3s ease-out;
+        pointer-events: none;
+        animation: gradientSlide 1.5s linear infinite;
+    `;
+
+    // Add the animation keyframes to the document
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes gradientSlide {
+            0% { transform: translateX(0%); }
+            100% { transform: translateX(100%); }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Modify click handler to show/hide gradient
+    button.addEventListener('click', () => {
+        console.log('[CONTENT] Menu button clicked, sending menuButtonClicked message');
+        gradientOverlay.style.opacity = '1';
+        chrome.runtime.sendMessage({ type: 'menuButtonClicked' });
+        
+        // Listen for response to hide the gradient
+        chrome.runtime.onMessage.addListener(function hideGradient(msg) {
+            if (msg.type === 'factCheck' || msg.type === 'error') {
+                // Let the current animation cycle complete
+                setTimeout(() => {
+                    gradientOverlay.style.opacity = '0';
+                }, 50);
+                chrome.runtime.onMessage.removeListener(hideGradient);
+            }
+        });
+    });
+
     // Add hover effect
     button.addEventListener('mouseover', () => {
         button.style.backgroundColor = '#e9ebee'; 
@@ -60,13 +112,8 @@ function createMenuButton() {
     `;
     
     innerBox.appendChild(buttonContent);
+    button.appendChild(gradientOverlay);
     button.appendChild(innerBox);
-
-    // SIMPLIFIED: Just send message to background script
-    button.addEventListener('click', () => {
-        console.log('[CONTENT] Menu button clicked, sending menuButtonClicked message');
-        chrome.runtime.sendMessage({ type: 'menuButtonClicked' });
-    });
 
     return button;
 }
