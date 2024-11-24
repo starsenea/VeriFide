@@ -50,27 +50,26 @@ function insertButton() {
     console.log('[CONTENT] Button inserted successfully');
 }
 
+let notificationCount = 0;
+const SPACING = 65;
+const INITIAL_TOP = 150;
+
 function showNotification(message, isError = false) {
-    let notification = document.getElementById('verifide-notification');
-    
-    // Remove existing notification if it exists
-    if (notification) {
-        notification.remove();
-    }
-    
-    // Create new notification
-    notification = document.createElement('div');
-    notification.id = 'verifide-notification';
+    notificationCount++;
+    const offset = (notificationCount - 1) * SPACING;
+
+    let notification = document.createElement('div');
+    notification.id = `verifide-notification-${notificationCount}`;
     notification.style.cssText = `
         position: fixed;
-        top: 150px;
+        top: ${INITIAL_TOP + offset}px;
         right: -350px;
         padding: 16px 24px;
         background: ${isError ? '#fdecea' : '#e8f0fe'};
         border-left: 4px solid ${isError ? '#d93025' : '#1a73e8'};
         border-radius: 4px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        z-index: 9999;
+        z-index: ${9999 - notificationCount};
         color: ${isError ? '#d93025' : '#1a73e8'};
         font-family: 'Google Sans', Roboto, Arial, sans-serif;
         font-size: 14px;
@@ -83,7 +82,7 @@ function showNotification(message, isError = false) {
     const closeButton = document.createElement('div');
     closeButton.style.cssText = `
         position: absolute;
-        top: 5px;
+        top: 8px;
         right: 8px;
         width: 20px;
         height: 20px;
@@ -109,6 +108,7 @@ function showNotification(message, isError = false) {
         notification.style.right = '-350px';
         setTimeout(() => {
             notification.remove();
+            repositionNotifications();
         }, 300);
     };
 
@@ -117,7 +117,7 @@ function showNotification(message, isError = false) {
     messageContainer.style.cssText = `
         padding-right: 20px;
     `;
-    messageContainer.textContent = isError ? `Error: ${message}` : `Correction: ${message}`;
+    messageContainer.textContent = message;
 
     // Assemble notification
     notification.appendChild(closeButton);
@@ -128,8 +128,17 @@ function showNotification(message, isError = false) {
     requestAnimationFrame(() => {
         notification.style.right = '24px';
     });
+}
 
-    console.log('Notification created:', message); // Debug log
+function repositionNotifications() {
+    const notifications = document.querySelectorAll('[id^="verifide-notification-"]');
+    let newCount = 0;
+    notifications.forEach((notification, index) => {
+        newCount++;
+        notification.style.top = `${INITIAL_TOP + (index * SPACING)}px`;
+        notification.style.zIndex = 9999 - index;
+    });
+    notificationCount = newCount;
 }
 
 // Initialize

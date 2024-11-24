@@ -97,50 +97,84 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // Helper function to process with AI
 async function processWithAI(content) {
-    // First, check if statement is subjective
-    const subjectiveCheck = await ai.languageModel.create({
-        systemPrompt: `You determine if a statement contains ONLY opinions (subjective) or makes factual claims (objective).
+    // Split content into sentences/lines
+    const sentences = content
+        .split(/[.!?]\s+|\n/)
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
+
+    console.log('Processing sentences:', sentences);
+
+    for (const sentence of sentences) {
+        try {
+            // First, check if statement is subjective
+            const subjectiveCheck = await ai.languageModel.create({
+                systemPrompt: `You determine if a statement contains ONLY opinions (subjective) or makes factual claims (objective).
 
 RULES:
 1. Reply ONLY with "SUBJECTIVE" or "OBJECTIVE"
 2. Subjective = PURE opinions, preferences, feelings
 3. Objective = ANY factual claims (even if incorrect)
 4. If statement contains ANY factual claims, respond "OBJECTIVE"`,
-        ...AI_PARAMS
-    });
+                ...AI_PARAMS
+            });
 
-    const isSubjective = await subjectiveCheck.prompt(content);
-    console.log('Subjective check:', isSubjective);
+            const isSubjective = await subjectiveCheck.prompt(sentence);
+            console.log('Subjective check for:', sentence, ':', isSubjective);
 
-    if (isSubjective.trim().toUpperCase() === 'SUBJECTIVE') {
-        return null; // Return null for subjective statements
-    }
+            if (isSubjective.trim().toUpperCase() === 'SUBJECTIVE') {
+                console.log('Skipping subjective statement:', sentence);
+                continue;
+            }
 
-    // If objective, proceed with fact checking
-    const session = await ai.languageModel.create({
-        systemPrompt: `You are a minimal fact checker. Your task is to verify statements with minimal changes.
+            console.log('Processing objective statement:', sentence);
+            
+            // Updated fact-checking prompt
+            const session = await ai.languageModel.create({
+                systemPrompt: `You are a fact checker. Verify if statements are scientifically and factually accurate.
 
 RULES:
-1. If statement is correct: Return "CORRECT"
-2. If incorrect: Return ONLY the corrected statement
-3. Keep all correct words identical
-4. Change ONLY the incorrect words/numbers
+1. If the statement is 100% accurate: Return "CORRECT"
+2. If ANY part is incorrect: Return the corrected version
+3. Change ONLY the incorrect parts
+4. Keep all other words identical
 5. NO explanations or additional text
-6. NO prefixes like "INCORRECT" or "Correction:"
-7. Just return the corrected statement itself`,
-        ...AI_PARAMS,
-        maxOutputTokens: Math.ceil(content.length / 4) * 2
-    });
+6. Examples:
+   Input: "Water is dry"
+   Output: "Water is wet"
+   
+   Input: "The Earth is flat"
+   Output: "The Earth is spherical"
+   
+   Input: "The sun rises in the east"
+   Output: "CORRECT"`,
+                ...AI_PARAMS,
+                maxOutputTokens: Math.ceil(sentence.length / 4) * 2
+            });
 
-    const result = await session.prompt(content);
-    
-    // If the statement is correct or unchanged, return null
-    if (result === 'CORRECT' || result === content) {
-        return null;
+            const result = await session.prompt(sentence);
+            console.log('Fact check result for:', sentence, ':', result);
+            
+            if (result && result !== 'CORRECT' && result !== sentence) {
+                console.log('Sending correction for:', sentence);
+                chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+                    if (tab) {
+                        chrome.tabs.sendMessage(tab.id, {
+                            type: 'factCheck',
+                            correction: result
+                        });
+                    }
+                });
+                
+                await new Promise(resolve => setTimeout(resolve, 300));
+            } else {
+                console.log('No correction needed for:', sentence);
+            }
+
+        } catch (error) {
+            console.error('Error processing sentence:', sentence, error);
+        }
     }
-    
-    // Only return corrections for incorrect objective statements
-    return result || null;
 }
 
 // Add a new listener for when the popup connects
