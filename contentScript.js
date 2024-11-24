@@ -22,13 +22,42 @@ function createMenuButton() {
     button.className = 'goog-inline-block goog-toolbar-button';
     button.setAttribute('role', 'button');
     button.setAttribute('data-tooltip', 'VeriFide Fact Check');
+    button.style.cssText = `
+        background-color: #f9fbfd; 
+        border-radius: 4px;  
+        margin: 0 2px;         
+        transition: background-color 0.2s;
+        height: 22px;
+        line-height: 22px;
+        padding: 0 4px;
+        letter-spacing: 0.4px;
+    `;
+    
+    // Add hover effect
+    button.addEventListener('mouseover', () => {
+        button.style.backgroundColor = '#e9ebee'; 
+    });
+    button.addEventListener('mouseout', () => {
+        button.style.backgroundColor = '#f9fbfd'; 
+    });
     
     const innerBox = document.createElement('div');
     innerBox.className = 'goog-toolbar-button-inner-box';
+    innerBox.style.cssText = `
+        height: 20.75px;
+        line-height: 20.75px;
+        padding: 0;
+    `;
     
     const buttonContent = document.createElement('div');
     buttonContent.className = 'goog-toolbar-button-caption';
     buttonContent.textContent = 'VeriFide';
+    buttonContent.style.cssText = `
+        font-family: "Roboto Mono", sans-serif;
+        font-size: 14px;
+        font-weight: 305;
+        color: #1e1e21
+    `;
     
     innerBox.appendChild(buttonContent);
     button.appendChild(innerBox);
