@@ -1,9 +1,15 @@
-console.log("[CONTENT] Content script starting");
+console.log('=== Content Script Loaded ===');
 
-// Add message listener for responses from background
+// Test function to verify script is working
+// function testHighlight() { ... }
+
+// Test message handling
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === 'factCheck' && message.correction) {
-        showNotification(message.correction);
+    console.log('=== Content Script Received Message ===', message);
+    
+    if (message.type === 'factCheck') {
+        console.log('Showing notification for:', message.originalText);
+        showNotification(message.correction, false, message.originalText);
     }
 });
 
@@ -50,19 +56,17 @@ function insertButton() {
     console.log('[CONTENT] Button inserted successfully');
 }
 
-let notificationCount = 0;
-const SPACING = 65;
+const SPACING = 20;
 const INITIAL_TOP = 150;
+let notificationCount = 0;
 
-function showNotification(message, isError = false) {
+function showNotification(message, isError = false, originalText = '') {
     notificationCount++;
-    const offset = (notificationCount - 1) * SPACING;
 
     let notification = document.createElement('div');
     notification.id = `verifide-notification-${notificationCount}`;
     notification.style.cssText = `
         position: fixed;
-        top: ${INITIAL_TOP + offset}px;
         right: -350px;
         padding: 16px 24px;
         background: ${isError ? '#fdecea' : '#e8f0fe'};
@@ -76,6 +80,9 @@ function showNotification(message, isError = false) {
         line-height: 20px;
         width: 300px;
         transition: right 0.3s ease-in-out;
+        box-sizing: border-box;
+        max-height: calc(100vh - 100px);
+        overflow-y: auto;
     `;
 
     // Create close button
@@ -95,15 +102,14 @@ function showNotification(message, isError = false) {
         font-weight: bold;
         opacity: 0.7;
         transition: opacity 0.2s;
+        z-index: 1;
     `;
     closeButton.innerHTML = '×';
     closeButton.title = 'Close';
     
-    // Hover effect
     closeButton.onmouseover = () => closeButton.style.opacity = '1';
     closeButton.onmouseout = () => closeButton.style.opacity = '0.7';
     
-    // Click handler
     closeButton.onclick = () => {
         notification.style.right = '-350px';
         setTimeout(() => {
@@ -116,30 +122,104 @@ function showNotification(message, isError = false) {
     const messageContainer = document.createElement('div');
     messageContainer.style.cssText = `
         padding-right: 20px;
+        word-wrap: break-word;
     `;
-    messageContainer.textContent = message;
+    messageContainer.innerHTML = `
+        <div style="color: #666; font-size: 12px; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
+            Original: ${originalText}
+        </div>
+        <div style="color: #1a73e8;">
+            Correction: ${message}
+        </div>
+    `;
 
-    // Assemble notification
     notification.appendChild(closeButton);
     notification.appendChild(messageContainer);
     document.body.appendChild(notification);
 
-    // Trigger slide-in
     requestAnimationFrame(() => {
+        positionNotifications();
         notification.style.right = '24px';
     });
 }
 
-function repositionNotifications() {
+// Add scroll event listener to reposition notifications
+document.addEventListener('scroll', () => {
+    requestAnimationFrame(positionNotifications);
+});
+
+function positionNotifications() {
     const notifications = document.querySelectorAll('[id^="verifide-notification-"]');
-    let newCount = 0;
+    let currentTop = INITIAL_TOP;
+    const scrollTop = window.scrollY;
+
     notifications.forEach((notification, index) => {
-        newCount++;
-        notification.style.top = `${INITIAL_TOP + (index * SPACING)}px`;
-        notification.style.zIndex = 9999 - index;
+        notification.style.top = `${currentTop + scrollTop}px`;
+        const height = notification.offsetHeight;
+        currentTop += height + SPACING;
     });
-    notificationCount = newCount;
+    notificationCount = notifications.length;
 }
+
+function repositionNotifications() {
+    positionNotifications();
+}
+
+function highlightText(text) {
+    removeHighlight();
+
+    // Focus on the Google Docs content area
+    const docContent = document.querySelector('.kix-appview-editor');
+    if (!docContent) {
+        console.error('Could not find Google Docs editor');
+        return;
+    }
+
+    // Find all text-containing elements
+    const textElements = docContent.querySelectorAll('.kix-lineview-content');
+    
+    textElements.forEach(element => {
+        const elementText = element.textContent;
+        if (elementText === text) {  // Exact match only
+            try {
+                const highlight = document.createElement('div');
+                highlight.className = 'verifide-highlight';
+                const rect = element.getBoundingClientRect();
+                
+                highlight.style.cssText = `
+                    position: absolute;
+                    left: ${rect.left + window.scrollX}px;
+                    top: ${rect.top + window.scrollY}px;
+                    width: ${rect.width}px;
+                    height: ${rect.height}px;
+                    background-color: rgba(255, 215, 0, 0.3);
+                    pointer-events: none;
+                    z-index: 100;
+                `;
+                
+                document.body.appendChild(highlight);
+            } catch (error) {
+                console.error('Error creating highlight:', error);
+            }
+        }
+    });
+}
+
+function removeHighlight() {
+    const highlights = document.querySelectorAll('.verifide-highlight');
+    highlights.forEach(h => h.remove());
+}
+
+// Add scroll handler to update highlight positions
+document.addEventListener('scroll', () => {
+    const activeNotification = document.querySelector('[id^="verifide-notification-"]:hover');
+    if (activeNotification) {
+        const originalText = activeNotification.getAttribute('data-original-text');
+        if (originalText) {
+            highlightText(originalText);
+        }
+    }
+});
 
 // Initialize
 setTimeout(insertButton, 1000);

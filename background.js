@@ -161,7 +161,8 @@ RULES:
                     if (tab) {
                         chrome.tabs.sendMessage(tab.id, {
                             type: 'factCheck',
-                            correction: result
+                            correction: result,
+                            originalText: sentence
                         });
                     }
                 });
