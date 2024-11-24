@@ -135,16 +135,16 @@ RULES:
 
 RULES:
 1. If the statement is 100% accurate: Return "CORRECT"
-2. If ANY part is incorrect: Return the corrected version
+2. If ANY part is incorrect: Return the corrected version with differences wrapped in <b> tags
 3. Change ONLY the incorrect parts
 4. Keep all other words identical
 5. NO explanations or additional text
 6. Examples:
    Input: "Water is dry"
-   Output: "Water is wet"
+   Output: "Water is <b>wet</b>"
    
    Input: "The Earth is flat"
-   Output: "The Earth is spherical"
+   Output: "The Earth is <b>spherical</b>"
    
    Input: "The sun rises in the east"
    Output: "CORRECT"`,
@@ -153,10 +153,14 @@ RULES:
             });
 
             const result = await session.prompt(sentence);
-            console.log('Fact check result for:', sentence, ':', result);
-            
+            console.log('Raw fact check result:', result);
+
             if (result && result !== 'CORRECT' && result !== sentence) {
-                console.log('Sending correction for:', sentence);
+                console.log('Sending correction:', {
+                    type: 'factCheck',
+                    correction: result,
+                    originalText: sentence
+                });
                 chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
                     if (tab) {
                         chrome.tabs.sendMessage(tab.id, {

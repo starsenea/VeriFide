@@ -8,7 +8,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('=== Content Script Received Message ===', message);
     
     if (message.type === 'factCheck') {
-        console.log('Showing notification for:', message.originalText);
+        console.log('Showing notification for:', {
+            correction: message.correction,
+            originalText: message.originalText
+        });
         showNotification(message.correction, false, message.originalText);
     }
 });
@@ -78,7 +81,7 @@ function showNotification(message, isError = false, originalText = '') {
         font-family: 'Google Sans', Roboto, Arial, sans-serif;
         font-size: 14px;
         line-height: 20px;
-        width: 300px;
+        width: 500px;
         transition: right 0.3s ease-in-out;
         box-sizing: border-box;
         max-height: calc(100vh - 100px);
@@ -118,20 +121,25 @@ function showNotification(message, isError = false, originalText = '') {
         }, 300);
     };
 
-    // Create message container
+    // Create message container with properly rendered HTML
     const messageContainer = document.createElement('div');
     messageContainer.style.cssText = `
         padding-right: 20px;
         word-wrap: break-word;
     `;
-    messageContainer.innerHTML = `
-        <div style="color: #666; font-size: 12px; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
-            Original: ${originalText}
-        </div>
-        <div style="color: #1a73e8;">
-            Correction: ${message}
-        </div>
-    `;
+
+    // Create original text div
+    const originalDiv = document.createElement('div');
+    originalDiv.style.cssText = 'color: #666; font-size: 12px; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 8px;';
+    originalDiv.textContent = `Original: ${originalText}`;
+
+    // Create correction div that properly renders HTML
+    const correctionDiv = document.createElement('div');
+    correctionDiv.style.cssText = 'color: #1a73e8;';
+    correctionDiv.innerHTML = `Correction: ${message}`; // Using innerHTML to render HTML tags
+
+    messageContainer.appendChild(originalDiv);
+    messageContainer.appendChild(correctionDiv);
 
     notification.appendChild(closeButton);
     notification.appendChild(messageContainer);
