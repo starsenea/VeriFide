@@ -157,7 +157,7 @@ function showNotification(message, isError = false, originalText = '') {
         font-family: 'Google Sans', Roboto, Arial, sans-serif;
         font-size: 14px;
         line-height: 20px;
-        width: 500px;
+        width: 518px;
         transition: right 0.3s ease-in-out;
         box-sizing: border-box;
         max-height: calc(100vh - 100px);
