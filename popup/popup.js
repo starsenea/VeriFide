@@ -1,5 +1,11 @@
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+// Connect to background script when popup opens
+const port = chrome.runtime.connect({ name: 'popup' });
+
+// Listen for messages from background
+port.onMessage.addListener((message) => {
+    console.log('Popup received message:', message);
     if (message.type === 'triggerPopupButton') {
+        console.log('Triggering submit button click');
         const submitButton = document.getElementById('submitButton');
         if (submitButton) {
             submitButton.click();

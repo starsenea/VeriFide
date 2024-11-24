@@ -8,9 +8,20 @@ const AI_PARAMS = {
     maxOutputTokens: 50
 };
 
+let shouldTriggerButton = false;
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('Background received message:', message);
     
+    if (message.type === 'menuButtonClicked') {
+        console.log('Menu button clicked, setting trigger flag...');
+        shouldTriggerButton = true;
+        // Programmatically click the extension icon
+        chrome.action.getUserSettings().then(settings => {
+            chrome.action.openPopup();
+        });
+    }
+
     if (message.type === 'checkDocument') {
         (async () => {
             try {
@@ -102,10 +113,16 @@ RULES:
         })();
         return true;
     }
+});
 
-    if (message.type === 'openPopup') {
-        chrome.tabs.sendMessage(sender.tab.id, {
-            type: 'triggerPopupButton'
-        });
+// Add a new listener for when the popup connects
+chrome.runtime.onConnect.addListener((port) => {
+    if (port.name === 'popup') {
+        console.log('Popup connected, checking trigger flag');
+        if (shouldTriggerButton) {
+            console.log('Triggering button');
+            port.postMessage({ type: 'triggerPopupButton' });
+            shouldTriggerButton = false;
+        }
     }
 });

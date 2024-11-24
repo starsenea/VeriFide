@@ -4,12 +4,6 @@ console.log("[CONTENT] Content script starting");
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'factCheck' && message.correction) {
         showNotification(message.correction);
-    } else if (message.type === 'triggerPopupButton') {
-        // Simulate clicking the extension icon
-        const extensionIcon = document.querySelector(`[title="VeriFide"]`);
-        if (extensionIcon) {
-            extensionIcon.click();
-        }
     }
 });
 
@@ -30,16 +24,10 @@ function createMenuButton() {
     innerBox.appendChild(buttonContent);
     button.appendChild(innerBox);
 
-    // Directly click the extension icon
+    // SIMPLIFIED: Just send message to background script
     button.addEventListener('click', () => {
-        const extensionIcon = document.querySelector(`[title="VeriFide"]`);
-        if (extensionIcon) {
-            extensionIcon.click();
-            // After clicking the icon, wait a moment then trigger the button
-            setTimeout(() => {
-                chrome.runtime.sendMessage({ type: 'triggerPopupButton' });
-            }, 100);
-        }
+        console.log('[CONTENT] Menu button clicked, sending menuButtonClicked message');
+        chrome.runtime.sendMessage({ type: 'menuButtonClicked' });
     });
 
     return button;
