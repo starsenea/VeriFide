@@ -52,45 +52,84 @@ function insertButton() {
 
 function showNotification(message, isError = false) {
     let notification = document.getElementById('verifide-notification');
-    if (!notification) {
-        notification = document.createElement('div');
-        notification.id = 'verifide-notification';
-        notification.style.cssText = `
-            position: fixed;
-            top: 150px;
-            right: -350px; /* Start off-screen */
-            padding: 16px 24px;
-            background: ${isError ? '#fdecea' : '#e8f0fe'};
-            border-left: 4px solid ${isError ? '#d93025' : '#1a73e8'};
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            z-index: 9999;
-            color: ${isError ? '#d93025' : '#1a73e8'};
-            font-family: 'Google Sans', Roboto, Arial, sans-serif;
-            font-size: 14px;
-            line-height: 20px;
-            width: 300px;
-            transition: right 0.3s ease-in-out;
-            display: none;
-        `;
-        document.body.appendChild(notification);
+    
+    // Remove existing notification if it exists
+    if (notification) {
+        notification.remove();
     }
     
-    notification.textContent = isError ? `Error: ${message}` : `Correction: ${message}`;
-    notification.style.display = 'block';
+    // Create new notification
+    notification = document.createElement('div');
+    notification.id = 'verifide-notification';
+    notification.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: -350px;
+        padding: 16px 24px;
+        background: ${isError ? '#fdecea' : '#e8f0fe'};
+        border-left: 4px solid ${isError ? '#d93025' : '#1a73e8'};
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        z-index: 9999;
+        color: ${isError ? '#d93025' : '#1a73e8'};
+        font-family: 'Google Sans', Roboto, Arial, sans-serif;
+        font-size: 14px;
+        line-height: 20px;
+        width: 300px;
+        transition: right 0.3s ease-in-out;
+    `;
+
+    // Create close button
+    const closeButton = document.createElement('div');
+    closeButton.style.cssText = `
+        position: absolute;
+        top: 5px;
+        right: 8px;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        color: ${isError ? '#d93025' : '#1a73e8'};
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        font-weight: bold;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+    `;
+    closeButton.innerHTML = '×';
+    closeButton.title = 'Close';
     
-    // Trigger slide-in
-    setTimeout(() => {
-        notification.style.right = '24px';
-    }, 100);
+    // Hover effect
+    closeButton.onmouseover = () => closeButton.style.opacity = '1';
+    closeButton.onmouseout = () => closeButton.style.opacity = '0.7';
     
-    // Slide-out and hide
-    setTimeout(() => {
+    // Click handler
+    closeButton.onclick = () => {
         notification.style.right = '-350px';
         setTimeout(() => {
-            notification.style.display = 'none';
+            notification.remove();
         }, 300);
-    }, 4700);
+    };
+
+    // Create message container
+    const messageContainer = document.createElement('div');
+    messageContainer.style.cssText = `
+        padding-right: 20px;
+    `;
+    messageContainer.textContent = isError ? `Error: ${message}` : `Correction: ${message}`;
+
+    // Assemble notification
+    notification.appendChild(closeButton);
+    notification.appendChild(messageContainer);
+    document.body.appendChild(notification);
+
+    // Trigger slide-in
+    requestAnimationFrame(() => {
+        notification.style.right = '24px';
+    });
+
+    console.log('Notification created:', message); // Debug log
 }
 
 // Initialize
