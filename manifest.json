@@ -11,10 +11,11 @@
     "activeTab",
     "scripting",
     "identity",
-    "ai"
+    "ai",
+    "action"
   ],
   "oauth2": {
-    "client_id": "716615658241-46o5fb1iv0olp78s5qnlu19o3ddnar9t.apps.googleusercontent.com",
+    "client_id": "716615658241-o7irnm8bk7b7kl8hfeevm494dqminpmn.apps.googleusercontent.com",
     "scopes": [
       "https://www.googleapis.com/auth/documents.readonly"
     ]
@@ -31,5 +32,12 @@
     "48": "images/VF48.png",
     "64": "images/VF64.png",
     "128": "images/VF128.png"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://docs.google.com/document/*"],
+      "js": ["contentScript.js"],
+      "run_at": "document_idle"
+    }
+  ]
 }

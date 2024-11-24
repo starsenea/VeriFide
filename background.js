@@ -102,4 +102,10 @@ RULES:
         })();
         return true;
     }
+
+    if (message.type === 'openPopup') {
+        chrome.tabs.sendMessage(sender.tab.id, {
+            type: 'triggerPopupButton'
+        });
+    }
 });

@@ -1,3 +1,12 @@
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'triggerPopupButton') {
+        const submitButton = document.getElementById('submitButton');
+        if (submitButton) {
+            submitButton.click();
+        }
+    }
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     const submitButton = document.getElementById("submitButton");
     const responseDiv = document.getElementById("response");

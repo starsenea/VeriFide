@@ -1,46 +1,65 @@
 console.log("[CONTENT] Content script starting");
 
-let port = null;
-let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 5;
-
-function connectPort() {
-    try {
-        port = chrome.runtime.connect({ name: "verifide" });
-        setupPortListeners();
-        reconnectAttempts = 0;
-        return true;
-    } catch (error) {
-        console.error("[CONTENT] Port connection failed:", error);
-        return false;
+// Add message listener for responses from background
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'factCheck' && message.correction) {
+        showNotification(message.correction);
+    } else if (message.type === 'triggerPopupButton') {
+        // Simulate clicking the extension icon
+        const extensionIcon = document.querySelector(`[title="VeriFide"]`);
+        if (extensionIcon) {
+            extensionIcon.click();
+        }
     }
+});
+
+function createMenuButton() {
+    const button = document.createElement('div');
+    button.id = 'verifide-menu-button';
+    button.className = 'goog-inline-block goog-toolbar-button';
+    button.setAttribute('role', 'button');
+    button.setAttribute('data-tooltip', 'VeriFide Fact Check');
+    
+    const innerBox = document.createElement('div');
+    innerBox.className = 'goog-toolbar-button-inner-box';
+    
+    const buttonContent = document.createElement('div');
+    buttonContent.className = 'goog-toolbar-button-caption';
+    buttonContent.textContent = 'VeriFide';
+    
+    innerBox.appendChild(buttonContent);
+    button.appendChild(innerBox);
+
+    // Directly click the extension icon
+    button.addEventListener('click', () => {
+        const extensionIcon = document.querySelector(`[title="VeriFide"]`);
+        if (extensionIcon) {
+            extensionIcon.click();
+            // After clicking the icon, wait a moment then trigger the button
+            setTimeout(() => {
+                chrome.runtime.sendMessage({ type: 'triggerPopupButton' });
+            }, 100);
+        }
+    });
+
+    return button;
 }
 
-function setupPortListeners() {
-    if (!port) return;
-
-    port.onDisconnect.addListener(() => {
-        console.log("[CONTENT] Port disconnected, attempting reconnect...");
-        port = null;
-        if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-            reconnectAttempts++;
-            setTimeout(connectPort, 1000 * reconnectAttempts);
-        } else {
-            console.error("[CONTENT] Max reconnection attempts reached");
-        }
-    });
-
-    port.onMessage.addListener((msg) => {
-        console.log("[CONTENT] Received port message:", msg);
-        
-        if (msg.type === 'correction' && msg.correction) {
-            showNotification(msg.correction);
-        } else if (msg.type === 'error') {
-            showNotification(`Error: ${msg.message}`, true);
-        } else {
-            showNotification('Received invalid response from analysis', true);
-        }
-    });
+function insertButton() {
+    if (document.getElementById('verifide-menu-button')) {
+        return;
+    }
+    
+    const menuBar = document.querySelector('.docs-menubar');
+    if (!menuBar) {
+        console.log('[CONTENT] Menu bar not found, retrying in 1s...');
+        setTimeout(insertButton, 1000);
+        return;
+    }
+    
+    const button = createMenuButton();
+    menuBar.appendChild(button);
+    console.log('[CONTENT] Button inserted successfully');
 }
 
 function showNotification(message, isError = false) {
@@ -72,6 +91,6 @@ function showNotification(message, isError = false) {
     }, 5000);
 }
 
-// Initial connection
-connectPort();
+// Initialize
+setTimeout(insertButton, 1000);
 console.log("[CONTENT] Content script loaded");
