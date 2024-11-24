@@ -77,10 +77,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 const result = await processWithAI(documentContent);
 
                 // Send result back to content script
-                chrome.tabs.sendMessage(tab.id, {
-                    type: 'factCheck',
-                    correction: result
-                });
+                if (result) {
+                    chrome.tabs.sendMessage(tab.id, {
+                        type: 'factCheck',
+                        correction: result
+                    });
+                }
 
             } catch (error) {
                 console.error('Error:', error);
@@ -111,7 +113,7 @@ RULES:
     console.log('Subjective check:', isSubjective);
 
     if (isSubjective.trim().toUpperCase() === 'SUBJECTIVE') {
-        return "This is a subjective statement and cannot be fact-checked.";
+        return null; // Return null for subjective statements
     }
 
     // If objective, proceed with fact checking
@@ -119,16 +121,26 @@ RULES:
         systemPrompt: `You are a minimal fact checker. Your task is to verify statements with minimal changes.
 
 RULES:
-1. If statement is correct: Return the EXACT original statement
-2. If incorrect: Change ONLY the incorrect words/numbers, keeping all other words identical
-3. NO explanations, NO extra text
-4. NO "Correction:" prefix or any other additions`,
+1. If statement is correct: Return "CORRECT"
+2. If incorrect: Return ONLY the corrected statement
+3. Keep all correct words identical
+4. Change ONLY the incorrect words/numbers
+5. NO explanations or additional text
+6. NO prefixes like "INCORRECT" or "Correction:"
+7. Just return the corrected statement itself`,
         ...AI_PARAMS,
         maxOutputTokens: Math.ceil(content.length / 4) * 2
     });
 
     const result = await session.prompt(content);
-    return result || 'No response from AI';
+    
+    // If the statement is correct or unchanged, return null
+    if (result === 'CORRECT' || result === content) {
+        return null;
+    }
+    
+    // Only return corrections for incorrect objective statements
+    return result || null;
 }
 
 // Add a new listener for when the popup connects

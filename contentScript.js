@@ -63,7 +63,7 @@ function showNotification(message, isError = false) {
     notification.id = 'verifide-notification';
     notification.style.cssText = `
         position: fixed;
-        top: 80px;
+        top: 150px;
         right: -350px;
         padding: 16px 24px;
         background: ${isError ? '#fdecea' : '#e8f0fe'};
