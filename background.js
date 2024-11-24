@@ -14,106 +14,122 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('Background received message:', message);
     
     if (message.type === 'menuButtonClicked') {
-        console.log('Menu button clicked, setting trigger flag...');
-        shouldTriggerButton = true;
-        // Programmatically click the extension icon
-        chrome.action.getUserSettings().then(settings => {
-            chrome.action.openPopup();
-        });
-    }
+        console.log('Menu button clicked, getting document content...');
+        // Get the current tab
+        chrome.tabs.query({ active: true, currentWindow: true }, async ([tab]) => {
+            if (!tab?.url?.includes('docs.google.com/document')) {
+                console.error('Not a Google Doc');
+                return;
+            }
 
-    if (message.type === 'checkDocument') {
-        (async () => {
             try {
-                // Get the current active tab instead of using sender
-                const [activeTab] = await chrome.tabs.query({ 
-                    active: true, 
-                    currentWindow: true 
+                // Get auth token
+                const token = await new Promise((resolve, reject) => {
+                    chrome.identity.getAuthToken({ interactive: true }, (token) => {
+                        if (chrome.runtime.lastError) {
+                            reject(chrome.runtime.lastError);
+                        } else {
+                            resolve(token);
+                        }
+                    });
                 });
 
-                if (!activeTab?.id) {
-                    throw new Error('No active tab found');
+                // Extract document ID from URL
+                const docId = tab.url.match(/\/document\/d\/([a-zA-Z0-9-_]+)/)?.[1];
+                if (!docId) {
+                    throw new Error('Could not find document ID');
                 }
 
-                if (!message.content || typeof message.content !== 'string') {
-                    throw new Error('Invalid content format');
+                // Fetch document content
+                const response = await fetch(`https://docs.googleapis.com/v1/documents/${docId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch document: ${response.status}`);
                 }
 
-                const inputLength = message.content.length;
-                const estimatedTokens = Math.ceil(inputLength / 4) * 2;
+                const data = await response.json();
                 
-                // First, check if statement is subjective
-                const subjectiveCheck = await ai.languageModel.create({
-                    systemPrompt: `You determine if a statement contains ONLY opinions (subjective) or makes factual claims (objective).
+                // Extract text content
+                let documentContent = '';
+                if (data.body?.content) {
+                    documentContent = data.body.content
+                        .filter(item => item.paragraph)
+                        .map(item => {
+                            return item.paragraph.elements
+                                .map(element => element.textRun?.content || '')
+                                .join('')
+                                .trim();
+                        })
+                        .filter(text => text)
+                        .join('\n')
+                        .trim();
+                }
+
+                if (!documentContent) {
+                    throw new Error('No document content found');
+                }
+
+                // Process with AI (your existing AI code)
+                const result = await processWithAI(documentContent);
+
+                // Send result back to content script
+                chrome.tabs.sendMessage(tab.id, {
+                    type: 'factCheck',
+                    correction: result
+                });
+
+            } catch (error) {
+                console.error('Error:', error);
+                chrome.tabs.sendMessage(tab.id, {
+                    type: 'factCheck',
+                    correction: `Error: ${error.message}`
+                });
+            }
+        });
+    }
+});
+
+// Helper function to process with AI
+async function processWithAI(content) {
+    // First, check if statement is subjective
+    const subjectiveCheck = await ai.languageModel.create({
+        systemPrompt: `You determine if a statement contains ONLY opinions (subjective) or makes factual claims (objective).
 
 RULES:
 1. Reply ONLY with "SUBJECTIVE" or "OBJECTIVE"
 2. Subjective = PURE opinions, preferences, feelings
 3. Objective = ANY factual claims (even if incorrect)
 4. If statement contains ANY factual claims, respond "OBJECTIVE"`,
-                    ...AI_PARAMS
-                });
+        ...AI_PARAMS
+    });
 
-                const isSubjective = await subjectiveCheck.prompt(message.content);
-                console.log('Subjective check:', isSubjective);
+    const isSubjective = await subjectiveCheck.prompt(content);
+    console.log('Subjective check:', isSubjective);
 
-                if (isSubjective.trim().toUpperCase() === 'SUBJECTIVE') {
-                    sendResponse({
-                        success: true,
-                        text: "This is a subjective statement and cannot be fact-checked."
-                    });
-                    return;
-                }
+    if (isSubjective.trim().toUpperCase() === 'SUBJECTIVE') {
+        return "This is a subjective statement and cannot be fact-checked.";
+    }
 
-                // If objective, proceed with fact checking
-                console.log('Creating fact-check session...');
-                const session = await ai.languageModel.create({
-                    systemPrompt: `You are a minimal fact checker. Your task is to verify statements with minimal changes.
+    // If objective, proceed with fact checking
+    const session = await ai.languageModel.create({
+        systemPrompt: `You are a minimal fact checker. Your task is to verify statements with minimal changes.
 
 RULES:
 1. If statement is correct: Return the EXACT original statement
 2. If incorrect: Change ONLY the incorrect words/numbers, keeping all other words identical
 3. NO explanations, NO extra text
 4. NO "Correction:" prefix or any other additions`,
-                    ...AI_PARAMS,
-                    maxOutputTokens: estimatedTokens
-                });
+        ...AI_PARAMS,
+        maxOutputTokens: Math.ceil(content.length / 4) * 2
+    });
 
-                console.log('Sending prompt to AI...');
-                const result = await session.prompt(message.content);
-                console.log('AI response:', result);
-
-                if (!result) {
-                    throw new Error('No response from AI');
-                }
-
-                // Try to send message to content script
-                try {
-                    await chrome.tabs.sendMessage(activeTab.id, {
-                        type: 'factCheck',
-                        correction: result
-                    });
-                } catch (error) {
-                    console.error('Failed to send message to content script:', error);
-                    // Continue execution to at least update popup
-                }
-
-                // Send response back to popup
-                sendResponse({
-                    success: true,
-                    text: result
-                });
-            } catch (error) {
-                console.error('Error:', error);
-                sendResponse({
-                    success: false,
-                    error: error.message || 'An unknown error occurred'
-                });
-            }
-        })();
-        return true;
-    }
-});
+    const result = await session.prompt(content);
+    return result || 'No response from AI';
+}
 
 // Add a new listener for when the popup connects
 chrome.runtime.onConnect.addListener((port) => {

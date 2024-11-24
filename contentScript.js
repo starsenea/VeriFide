@@ -57,15 +57,20 @@ function showNotification(message, isError = false) {
         notification.id = 'verifide-notification';
         notification.style.cssText = `
             position: fixed;
-            top: 10px;
-            right: 10px;
-            padding: 15px;
-            background: white;
-            border: 1px solid ${isError ? '#ff4444' : '#ccc'};
+            top: 150px;
+            right: -350px; /* Start off-screen */
+            padding: 16px 24px;
+            background: ${isError ? '#fdecea' : '#e8f0fe'};
+            border-left: 4px solid ${isError ? '#d93025' : '#1a73e8'};
             border-radius: 4px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             z-index: 9999;
-            color: ${isError ? '#ff4444' : 'black'};
+            color: ${isError ? '#d93025' : '#1a73e8'};
+            font-family: 'Google Sans', Roboto, Arial, sans-serif;
+            font-size: 14px;
+            line-height: 20px;
+            width: 300px;
+            transition: right 0.3s ease-in-out;
             display: none;
         `;
         document.body.appendChild(notification);
@@ -74,9 +79,18 @@ function showNotification(message, isError = false) {
     notification.textContent = isError ? `Error: ${message}` : `Correction: ${message}`;
     notification.style.display = 'block';
     
+    // Trigger slide-in
     setTimeout(() => {
-        notification.style.display = 'none';
-    }, 5000);
+        notification.style.right = '24px';
+    }, 100);
+    
+    // Slide-out and hide
+    setTimeout(() => {
+        notification.style.right = '-350px';
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 300);
+    }, 4700);
 }
 
 // Initialize
