@@ -6,17 +6,15 @@ console.log('=== Content Script Loaded ===');
 // Test message handling
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('=== Content Script Received Message ===', message);
-    
+
     if (message.type === 'factCheck') {
         console.log('Showing notification for:', {
             correction: message.correction,
-            originalText: message.originalText
+            originalText: message.originalText,
         });
         showNotification(message.correction, false, message.originalText);
     }
-});
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'toggleVeriFide') {
         const menuButton = document.getElementById('verifide-menu-button');
 
@@ -33,6 +31,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
     }
 });
+
 
 function createMenuButton() {
     const button = document.createElement('div');
