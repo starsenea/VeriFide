@@ -127,3 +127,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    const toggle = document.getElementById('toggleVeriFide');
+    
+    // Check saved state from Chrome storage
+    chrome.storage.sync.get('veriFideToggle', ({ veriFideToggle }) => {
+        toggle.checked = veriFideToggle || false;
+    });
+
+    // Add event listener for toggle switch
+    toggle.addEventListener('change', () => {
+        const isChecked = toggle.checked;
+
+        // Save the state
+        chrome.storage.sync.set({ veriFideToggle: isChecked });
+
+        // Send message to content script to toggle visibility
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            if (tabs[0]) {
+                chrome.tabs.sendMessage(tabs[0].id, { type: 'toggleVeriFide', show: isChecked });
+            }
+        });
+    });
+});

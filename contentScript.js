@@ -16,6 +16,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 });
 
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === 'toggleVeriFide') {
+        const menuButton = document.getElementById('verifide-menu-button');
+
+        if (message.show) {
+            console.log('[CONTENT] Showing VeriFide button');
+            if (!menuButton) {
+                insertButton(); // Insert if not already present
+            }
+        } else {
+            console.log('[CONTENT] Hiding VeriFide button');
+            if (menuButton) {
+                menuButton.remove();
+            }
+        }
+    }
+});
+
 function createMenuButton() {
     const button = document.createElement('div');
     button.id = 'verifide-menu-button';
