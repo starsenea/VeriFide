@@ -157,7 +157,9 @@ function showNotification(message, isError = false, originalText = '') {
         font-family: 'Google Sans', Roboto, Arial, sans-serif;
         font-size: 14px;
         line-height: 20px;
-        width: 518px;
+        width: min(340px, calc(100vw - 48px)); 
+        max-width: 90vw;                       
+        min-width: 280px;                     
         transition: right 0.3s ease-in-out;
         box-sizing: border-box;
         max-height: calc(100vh - 100px);
@@ -229,6 +231,11 @@ function showNotification(message, isError = false, originalText = '') {
 
 // Add scroll event listener to reposition notifications
 document.addEventListener('scroll', () => {
+    requestAnimationFrame(positionNotifications);
+});
+
+// Add window resize event listener to reposition notifications
+window.addEventListener('resize', () => {
     requestAnimationFrame(positionNotifications);
 });
 
