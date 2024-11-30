@@ -1,63 +1,32 @@
-# VeriFide - AI-Powered Fact Checking for Google Docs
+# VeriFide
 
-VeriFide is a Chrome extension that uses AI to fact-check content in Google Docs, providing real-time corrections for factual inaccuracies while respecting subjective statements.
-
-## Contact
-
-#### Ethan Zhang
-- Email: zhangethan@icloud.com | zhan5173@purdue.edu
-- LinkedIn: [Ethan Zhang](https://www.linkedin.com/in/ez24/)
-
-#### Rishi Padhye
-- Email: rishipadhye@gmail.com | rpadhye@purdue.edu
-- LinkedIn: [Rishi Padhye](https://www.linkedin.com/in/rpadhye/)
+A Chrome extension that provides real-time fact-checking for Google Docs using AI.
 
 ## Features
-- Real-time fact checking of Google Docs content
-- Distinguishes between subjective opinions and objective claims
-- Secure OAuth authentication
-- Clean, minimal UI with notifications
+
+- Real-time fact checking of document content
+- Non-intrusive UI that integrates with Google Docs
+- Privacy-focused with local processing
+- Easy toggle on/off functionality
 
 ## Installation
 
 1. Clone this repository
-2. Get your Google OAuth Client ID:
-   - Create project at [Google Cloud Console](https://console.cloud.google.com/)
-   - Enable Google Docs API
-   - Create OAuth 2.0 credentials
-   - Add `chrome-extension://` to authorized origins
-3. Replace `client_id` in `manifest.json`
-4. Load in Chrome:
-   - Go to `chrome://extensions/`
-   - Enable "Developer mode"
-   - Click "Load unpacked"
-   - Select extension directory
+2. Open Chrome and navigate to `chrome://extensions/`
+3. Enable "Developer mode" in the top right
+4. Click "Load unpacked" and select the project directory
 
 ## Usage
-1. Open a Google Doc
+
+1. Open any Google Doc
 2. Click the VeriFide extension icon
-3. Click "Fact-Check Current Document"
-4. Review corrections in the notifications
-
-## Technical Overview
-- `manifest.json` - Configuration
-- `background.js` - AI processing
-- `contentScript.js` - Document interaction
-- `popup/` - UI files
-- Uses Google OAuth 2.0 and Chrome's AI capabilities
-
-## Privacy & Security
-- Access only when requested
-- No permanent data storage
-- Secure AI processing
-- OAuth token management by Chrome
-
-## Contributing
-1. Fork repository
-2. Create feature branch
-3. Submit Pull Request
+3. Toggle the extension on
+4. Click the "VeriFide" button in your Google Docs toolbar to fact-check the document
 
 ## License
-GNU GENERAL PUBLIC LICENSE |Version 3, 29 June 2007
 
-Note: Keep your OAuth client ID private and don't commit it to git. 
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. 
