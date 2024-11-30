@@ -34,15 +34,6 @@
       "128": "images/VF128.png"
     }
   },
-  "chrome_settings_overrides": {
-    "homepage": "chrome://newtab"
-  },
-  "chrome_ui_overrides": {
-    "bookmarks_ui": {
-      "remove_bookmark_shortcut": true,
-      "remove_button": true
-    }
-  },
   "icons": {
     "32": "images/VF32.png",
     "48": "images/VF48.png",

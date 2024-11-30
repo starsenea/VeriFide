@@ -8,16 +8,28 @@ port.onMessage.addListener((message) => {
 
 document.addEventListener('DOMContentLoaded', async () => {
     const toggleSwitch = document.getElementById("toggleSwitch");
+    if (!toggleSwitch) {
+        console.error('Toggle switch not found');
+        return;
+    }
+
+    // Only try to access responseDiv if it exists in your HTML
     const responseDiv = document.getElementById("response");
-    responseDiv.style.display = 'none'; // Hide the response div
+    if (responseDiv) {
+        responseDiv.style.display = 'none';
+    }
 
     try {
         // Get the current state from storage and set the toggle
         const { verifideEnabled } = await chrome.storage.local.get('verifideEnabled');
         console.log('Retrieved state:', verifideEnabled); // Debug log
         
-        // Explicitly set the checkbox state
-        toggleSwitch.checked = verifideEnabled === true;
+        // Set initial state and ensure it's a boolean
+        const initialState = verifideEnabled === true;
+        toggleSwitch.checked = initialState;
+        
+        // Ensure storage matches the initial state
+        await chrome.storage.local.set({ verifideEnabled: initialState });
 
     } catch (error) {
         console.error('Error retrieving state:', error);
@@ -47,9 +59,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                     type: 'toggleVerifide',
                     enabled: isEnabled
                 });
+                console.log('Toggle message sent successfully');
             } catch (error) {
+                console.log('Error sending toggle message:', error);
                 // If content script isn't ready, inject it
                 if (error.message.includes("Could not establish connection")) {
+                    console.log('Injecting content script...');
                     await chrome.scripting.executeScript({
                         target: { tabId: tab.id },
                         files: ['contentScript.js']
@@ -59,6 +74,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         type: 'toggleVerifide',
                         enabled: isEnabled
                     });
+                    console.log('Toggle message sent after injection');
                 } else {
                     throw error;
                 }

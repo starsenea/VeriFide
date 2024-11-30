@@ -14,20 +14,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         });
         showNotification(message.correction, false, message.originalText);
     }
-});
-
-// Update the message listener to handle toggle without reload
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('Content script received message:', message);
-    
-    if (message.type === 'toggleVerifide') {
+    else if (message.type === 'toggleVerifide') {
         console.log('Toggle VeriFide:', message.enabled);
         const existingButton = document.getElementById('verifide-menu-button');
+        console.log('Existing button found:', !!existingButton);
         
         if (message.enabled && !existingButton) {
+            console.log('Inserting button...');
             insertButton();
         } else if (!message.enabled && existingButton) {
-            existingButton.remove();
+            console.log('Removing button...');
+            existingButton.parentNode.removeChild(existingButton);
         }
         sendResponse({ success: true });
     }
@@ -85,16 +82,22 @@ function createMenuButton() {
     `;
     document.head.appendChild(style);
     
-    // Modify click handler to show/hide gradient
+    // Modify click handler to handle all cases
     button.addEventListener('click', () => {
         console.log('[CONTENT] Menu button clicked, sending menuButtonClicked message');
         gradientOverlay.style.opacity = '1';
+        
+        // Set a maximum timeout for the gradient
+        const gradientTimeout = setTimeout(() => {
+            gradientOverlay.style.opacity = '0';
+        }, 5000); // 5 seconds maximum
+
         chrome.runtime.sendMessage({ type: 'menuButtonClicked' });
         
-        // Listen for response to hide the gradient
+        // Listen for any response to hide the gradient
         chrome.runtime.onMessage.addListener(function hideGradient(msg) {
             if (msg.type === 'factCheck' || msg.type === 'error') {
-                // Let the current animation cycle complete
+                clearTimeout(gradientTimeout);
                 setTimeout(() => {
                     gradientOverlay.style.opacity = '0';
                 }, 50);
@@ -136,20 +139,26 @@ function createMenuButton() {
     return button;
 }
 
-// Update insertButton to be more reliable without reload
+// Update insertButton function with better logging and error handling
 function insertButton() {
+    console.log('[CONTENT] Attempting to insert button...');
+    
     // Don't create duplicate buttons
-    if (document.getElementById('verifide-menu-button')) {
+    const existingButton = document.getElementById('verifide-menu-button');
+    if (existingButton) {
+        console.log('[CONTENT] Button already exists');
         return;
     }
     
     const menuBar = document.querySelector('.docs-menubar');
+    console.log('[CONTENT] Menu bar found:', !!menuBar);
+    
     if (menuBar) {
         const button = createMenuButton();
         menuBar.appendChild(button);
         console.log('[CONTENT] Button inserted successfully');
     } else {
-        // If menu bar isn't found, retry after a short delay
+        console.log('[CONTENT] Menu bar not found, will retry');
         setTimeout(insertButton, 500);
     }
 }
@@ -331,18 +340,75 @@ document.addEventListener('scroll', () => {
     }
 });
 
-// Initialize
-setTimeout(insertButton, 1000);
-console.log("[CONTENT] Content script loaded");
-
-// Add this initialization code at the bottom of your content script
-(async () => {
-    try {
-        const { verifideEnabled } = await chrome.storage.local.get('verifideEnabled');
+// Update initialization with more robust checks
+function initializeVerifide() {
+    console.log('[CONTENT] Initializing VeriFide...');
+    
+    chrome.storage.local.get('verifideEnabled', ({ verifideEnabled }) => {
+        console.log('[CONTENT] VeriFide enabled state:', verifideEnabled);
+        
         if (verifideEnabled) {
-            insertButton();
+            console.log('[CONTENT] VeriFide is enabled, attempting to insert button');
+            // Attempt multiple times to insert the button
+            let attempts = 0;
+            const maxAttempts = 10;
+            
+            const tryInsertButton = () => {
+                attempts++;
+                console.log(`[CONTENT] Insert attempt ${attempts} of ${maxAttempts}`);
+                
+                const menuBar = document.querySelector('.docs-menubar');
+                const existingButton = document.getElementById('verifide-menu-button');
+                
+                if (!existingButton) {
+                    if (menuBar) {
+                        insertButton();
+                    } else if (attempts < maxAttempts) {
+                        console.log('[CONTENT] Menu bar not found, retrying in 1 second...');
+                        setTimeout(tryInsertButton, 1000);
+                    } else {
+                        console.log('[CONTENT] Max attempts reached, failed to insert button');
+                    }
+                } else {
+                    console.log('[CONTENT] Button already exists');
+                }
+            };
+            
+            tryInsertButton();
+        } else {
+            console.log('[CONTENT] VeriFide is disabled, removing button if exists');
+            const existingButton = document.getElementById('verifide-menu-button');
+            if (existingButton) {
+                existingButton.parentNode.removeChild(existingButton);
+                console.log('[CONTENT] Button removed');
+            }
         }
-    } catch (error) {
-        console.error('Error initializing VeriFide button:', error);
+    });
+}
+
+// Initialize when the document is ready
+if (document.readyState === 'loading') {
+    console.log('[CONTENT] Document still loading, waiting for DOMContentLoaded');
+    document.addEventListener('DOMContentLoaded', initializeVerifide);
+} else {
+    console.log('[CONTENT] Document already loaded, initializing now');
+    initializeVerifide();
+}
+
+// Also initialize after a delay to handle Google Docs' dynamic loading
+setTimeout(initializeVerifide, 2000);
+
+// Add a MutationObserver to watch for the menu bar
+const observer = new MutationObserver((mutations, obs) => {
+    const menuBar = document.querySelector('.docs-menubar');
+    if (menuBar) {
+        console.log('[CONTENT] Menu bar found by observer, initializing');
+        obs.disconnect();
+        initializeVerifide();
     }
-})();
+});
+
+observer.observe(document.body, {
+    childList: true,
+    subtree: true
+});
