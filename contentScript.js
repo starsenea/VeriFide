@@ -16,6 +16,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
 });
 
+// Update the message listener to handle toggle without reload
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('Content script received message:', message);
+    
+    if (message.type === 'toggleVerifide') {
+        console.log('Toggle VeriFide:', message.enabled);
+        const existingButton = document.getElementById('verifide-menu-button');
+        
+        if (message.enabled && !existingButton) {
+            insertButton();
+        } else if (!message.enabled && existingButton) {
+            existingButton.remove();
+        }
+        sendResponse({ success: true });
+    }
+    return true;
+});
+
 function createMenuButton() {
     const button = document.createElement('div');
     button.id = 'verifide-menu-button';
@@ -118,21 +136,22 @@ function createMenuButton() {
     return button;
 }
 
+// Update insertButton to be more reliable without reload
 function insertButton() {
+    // Don't create duplicate buttons
     if (document.getElementById('verifide-menu-button')) {
         return;
     }
     
     const menuBar = document.querySelector('.docs-menubar');
-    if (!menuBar) {
-        console.log('[CONTENT] Menu bar not found, retrying in 1s...');
-        setTimeout(insertButton, 1000);
-        return;
+    if (menuBar) {
+        const button = createMenuButton();
+        menuBar.appendChild(button);
+        console.log('[CONTENT] Button inserted successfully');
+    } else {
+        // If menu bar isn't found, retry after a short delay
+        setTimeout(insertButton, 500);
     }
-    
-    const button = createMenuButton();
-    menuBar.appendChild(button);
-    console.log('[CONTENT] Button inserted successfully');
 }
 
 const SPACING = 20;
@@ -315,3 +334,15 @@ document.addEventListener('scroll', () => {
 // Initialize
 setTimeout(insertButton, 1000);
 console.log("[CONTENT] Content script loaded");
+
+// Add this initialization code at the bottom of your content script
+(async () => {
+    try {
+        const { verifideEnabled } = await chrome.storage.local.get('verifideEnabled');
+        if (verifideEnabled) {
+            insertButton();
+        }
+    } catch (error) {
+        console.error('Error initializing VeriFide button:', error);
+    }
+})();

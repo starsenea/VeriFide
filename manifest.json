@@ -12,7 +12,8 @@
     "scripting",
     "identity",
     "ai",
-    "action"
+    "action",
+    "storage"
   ],
   "oauth2": {
     "client_id": "716615658241-o7irnm8bk7b7kl8hfeevm494dqminpmn.apps.googleusercontent.com",
@@ -25,7 +26,22 @@
     "https://www.googleapis.com/*"
   ],
   "action": {
-    "default_popup": "popup/popup.html"
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "32": "images/VF32.png",
+      "48": "images/VF48.png",
+      "64": "images/VF64.png",
+      "128": "images/VF128.png"
+    }
+  },
+  "chrome_settings_overrides": {
+    "homepage": "chrome://newtab"
+  },
+  "chrome_ui_overrides": {
+    "bookmarks_ui": {
+      "remove_bookmark_shortcut": true,
+      "remove_button": true
+    }
   },
   "icons": {
     "32": "images/VF32.png",
