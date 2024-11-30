@@ -10,6 +10,26 @@ const AI_PARAMS = {
 
 let shouldTriggerButton = false;
 
+async function getAuthToken() {
+    try {
+        return new Promise((resolve, reject) => {
+            chrome.identity.getAuthToken({ 
+                interactive: true,
+                scopes: ['https://www.googleapis.com/auth/documents.readonly']
+            }, (token) => {
+                if (chrome.runtime.lastError) {
+                    reject(chrome.runtime.lastError);
+                } else {
+                    resolve(token);
+                }
+            });
+        });
+    } catch (error) {
+        console.error('Auth error:', error);
+        throw error;
+    }
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('Background received message:', message);
     
@@ -23,16 +43,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             }
 
             try {
-                // Get auth token
-                const token = await new Promise((resolve, reject) => {
-                    chrome.identity.getAuthToken({ interactive: true }, (token) => {
-                        if (chrome.runtime.lastError) {
-                            reject(chrome.runtime.lastError);
-                        } else {
-                            resolve(token);
-                        }
-                    });
-                });
+                const token = await getAuthToken();
 
                 // Extract document ID from URL
                 const docId = tab.url.match(/\/document\/d\/([a-zA-Z0-9-_]+)/)?.[1];
