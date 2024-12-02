@@ -1,0 +1,12 @@
+# Environment variables and credentials
+.env
+client_id.txt
+credentials.json
+*.pem
+*.key
+
+# If you're using environment-specific files
+.env.local
+.env.development
+.env.production 
+manifest.json

@@ -1,114 +1,93 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const submitButton = document.getElementById("submitButton");
+// Connect to background script when popup opens
+const port = chrome.runtime.connect({ name: 'popup' });
+
+// Listen for messages from background
+port.onMessage.addListener((message) => {
+    console.log('Popup received message:', message);
+});
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const toggleSwitch = document.getElementById("toggleSwitch");
+    if (!toggleSwitch) {
+        console.error('Toggle switch not found');
+        return;
+    }
+
+    // Only try to access responseDiv if it exists in your HTML
     const responseDiv = document.getElementById("response");
-    
-    submitButton.addEventListener("click", async () => {
+    if (responseDiv) {
+        responseDiv.style.display = 'none';
+    }
+
+    try {
+        // Get the current state from storage and set the toggle
+        const { verifideEnabled } = await chrome.storage.local.get('verifideEnabled');
+        console.log('Retrieved state:', verifideEnabled); // Debug log
+        
+        // Set initial state and ensure it's a boolean
+        const initialState = verifideEnabled === true;
+        toggleSwitch.checked = initialState;
+        
+        // Ensure storage matches the initial state
+        await chrome.storage.local.set({ verifideEnabled: initialState });
+
+    } catch (error) {
+        console.error('Error retrieving state:', error);
+    }
+
+    toggleSwitch.addEventListener("change", async () => {
+        const isEnabled = toggleSwitch.checked;
+        console.log('Toggle changed to:', isEnabled);
+        
         try {
-            responseDiv.textContent = "Getting document content...";
-            
+            // Save state to storage
+            await chrome.storage.local.set({ verifideEnabled: isEnabled });
+            console.log('State saved:', isEnabled);
+
             // Get current tab
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            
             if (!tab?.url?.includes('docs.google.com/document')) {
-                throw new Error('Please open a Google Doc first');
+                toggleSwitch.checked = false;
+                await chrome.storage.local.set({ verifideEnabled: false });
+                return;
             }
 
-            // Extract document ID from URL
-            const docId = tab.url.match(/\/document\/d\/([a-zA-Z0-9-_]+)/)?.[1];
-            if (!docId) {
-                throw new Error('Could not find document ID');
-            }
-
-            console.log('Document ID:', docId);
-
-            // Get auth token with proper error handling
-            let token;
+            // Send message to content script to show/hide button
             try {
-                token = await new Promise((resolve, reject) => {
-                    chrome.identity.getAuthToken({ interactive: true }, (token) => {
-                        if (chrome.runtime.lastError) {
-                            reject(chrome.runtime.lastError);
-                        } else {
-                            resolve(token);
-                        }
-                    });
+                await chrome.tabs.sendMessage(tab.id, {
+                    type: 'toggleVerifide',
+                    enabled: isEnabled
                 });
-                console.log('Got auth token');
+                console.log('Toggle message sent successfully');
             } catch (error) {
-                console.error('Auth error:', error);
-                throw new Error('Failed to authenticate: ' + error.message);
-            }
-            
-            // Fetch document content
-            const response = await fetch(`https://docs.googleapis.com/v1/documents/${docId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (!response.ok) {
-                const errorData = await response.text();
-                console.error('API Error:', errorData);
-                throw new Error(`Failed to fetch document content: ${response.status}`);
-            }
-
-            const data = await response.json();
-            console.log('Raw API response:', data);
-            
-            // Extract text content from document
-            let documentContent = '';
-            if (data.body?.content) {
-                documentContent = data.body.content
-                    .filter(item => item.paragraph)
-                    .map(item => {
-                        const paragraphText = item.paragraph.elements
-                            .map(element => element.textRun?.content || '')
-                            .join('')
-                            .trim();
-                        if (paragraphText) {
-                            console.log('Found paragraph:', paragraphText);
-                            return paragraphText;
-                        }
-                        return null;
-                    })
-                    .filter(text => text) // Remove empty paragraphs
-                    .join('\n')
-                    .trim();
-            }
-
-            console.log('Final extracted content:', documentContent);
-
-            if (!documentContent) {
-                throw new Error('No document content found');
-            }
-
-            responseDiv.textContent = "Analyzing content...";
-            
-            console.log('Sending to background:', documentContent);
-            chrome.runtime.sendMessage({
-                type: 'checkDocument',
-                content: documentContent
-            }, response => {
-                console.log('Response from background:', response);
-                if (chrome.runtime.lastError) {
-                    console.error('Runtime error:', chrome.runtime.lastError);
-                    responseDiv.textContent = "Error: " + chrome.runtime.lastError.message;
-                    return;
-                }
-                
-                if (response?.error) {
-                    console.error('Response error:', response.error);
-                    responseDiv.textContent = "Error: " + response.error;
-                } else if (response?.text) {
-                    console.log('Success:', response.text);
-                    responseDiv.textContent = response.text;
+                console.log('Error sending toggle message:', error);
+                // If content script isn't ready, inject it
+                if (error.message.includes("Could not establish connection")) {
+                    console.log('Injecting content script...');
+                    await chrome.scripting.executeScript({
+                        target: { tabId: tab.id },
+                        files: ['contentScript.js']
+                    });
+                    // Retry sending the message
+                    await chrome.tabs.sendMessage(tab.id, {
+                        type: 'toggleVerifide',
+                        enabled: isEnabled
+                    });
+                    console.log('Toggle message sent after injection');
                 } else {
-                    responseDiv.textContent = "Error: Invalid response format";
+                    throw error;
                 }
-            });
-
+            }
         } catch (error) {
-            console.error("Error:", error);
-            responseDiv.textContent = "Error: " + error.message;
+            console.error('Error:', error);
         }
+    });
+});
+
+// Add this to verify the state when popup closes
+window.addEventListener('unload', () => {
+    chrome.storage.local.get('verifideEnabled', (result) => {
+        console.log('State on popup close:', result.verifideEnabled);
     });
 });

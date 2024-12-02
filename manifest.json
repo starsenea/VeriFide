@@ -11,12 +11,14 @@
     "activeTab",
     "scripting",
     "identity",
-    "ai"
+    "storage",
+    "https://language.googleapis.com/*"
   ],
   "oauth2": {
-    "client_id": "716615658241-46o5fb1iv0olp78s5qnlu19o3ddnar9t.apps.googleusercontent.com",
+    "client_id": "716615658241-o7irnm8bk7b7kl8hfeevm494dqminpmn.apps.googleusercontent.com",
     "scopes": [
-      "https://www.googleapis.com/auth/documents.readonly"
+      "https://www.googleapis.com/auth/documents.readonly",
+      "https://www.googleapis.com/auth/cloud-language"
     ]
   },
   "host_permissions": [
@@ -24,6 +26,25 @@
     "https://www.googleapis.com/*"
   ],
   "action": {
-    "default_popup": "popup/popup.html"
-  }
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "32": "images/VF32.png",
+      "48": "images/VF48.png",
+      "64": "images/VF64.png",
+      "128": "images/VF128.png"
+    }
+  },
+  "icons": {
+    "32": "images/VF32.png",
+    "48": "images/VF48.png",
+    "64": "images/VF64.png",
+    "128": "images/VF128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://docs.google.com/document/*"],
+      "js": ["contentScript.js"],
+      "run_at": "document_idle"
+    }
+  ]
 }
