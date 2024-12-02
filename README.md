@@ -1,17 +1,32 @@
 # VeriFide
-Made by Rishikesh and Ethan
 
-## What is VeriFide?
-VeriFide is an on-the-go fact checking extension, which takes in information written by a user in Google Docs, and tells us if the sentence is true or false. If false, it returns the correct statement using Google Chrome's Built-in Prompt AI API.
+A Chrome extension that provides real-time fact-checking for Google Docs using AI.
 
-### Future Plans
-We are working on converting this to an automatic fact checker, which checks statements as written by the user. 
+## Features
 
-#### Preparation
-* Clone this repository onto your desktop.
-* You will need to create an OAuth 2.0 Client ID from [Google Cloud Console](https://console.cloud.google.com/welcome?inv=1&invt=AbhxWA&project=verifide).
-* Once created, copy the Client ID and paste in the manifest.json folder under OAuth2.
-* In Google Chrome Canary, go to the [Extensions Page](chrome://extensions/) and click Load Unpacked.
-* Navigate to the cloned folder and click open.
-* After that, you are good to go. Try writing something and in a Google Doc and have fun!
+- Real-time fact checking of document content
+- Non-intrusive UI that integrates with Google Docs
+- Privacy-focused with local processing
+- Easy toggle on/off functionality
 
+## Installation
+
+1. Clone this repository
+2. Open Chrome and navigate to `chrome://extensions/`
+3. Enable "Developer mode" in the top right
+4. Click "Load unpacked" and select the project directory
+
+## Usage
+
+1. Open any Google Doc
+2. Click the VeriFide extension icon
+3. Toggle the extension on
+4. Click the "VeriFide" button in your Google Docs toolbar to fact-check the document
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. 
