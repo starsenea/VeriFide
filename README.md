@@ -11,26 +11,41 @@ A Chrome extension that provides real-time fact-checking for Google Docs using A
 
 ## Installation
 
+### Prerequisites
 1. Clone this repository
-2. Follow instructions to download the Prompt API from the given documentation. (https://developer.chrome.com/docs/extensions/ai/prompt-api)
-3. Navigate to console.cloud.google.com .
-4. Create a new project.
-5. Navigate to API's and Services, and enable Google Docs API.
-6. Navigate to OAuth consent screen.
-7. Fill out the App information and Developer contact information. (It does not matter what you put here)
-9. Open Chrome Canary and navigate to `chrome://extensions`
-10. Enable "Developer mode" in the top right.
-11. Click "Load unpacked" and select the project directory.
-12. Next, navigate to credentials and create an OAuth Client ID.
-13. Set application type to Chrome extension.
-14. From the extensions page, copy the ID and paste into the Item ID field.
-15. Create the Client ID and copy it
-16. Navigate to manifest.json in the cloned repository and paste your Client ID where it says PASTE_CLIENT_ID_HERE
-17. Next head back to chrome://extensions and reload the extension (there may be an error but this does not affect the model)
-18. Next head to a google doc, find the extension popup in the chrome menu bar.
-19. Enable the switch, and you should see a VeriFide button in the Google Docs Menu Bar.
-20. Type on the document and watch the magic happen.
-    
+2. Install the Prompt API ([documentation](https://developer.chrome.com/docs/extensions/ai/prompt-api))
+
+### Google Cloud Setup
+3. Go to [Google Cloud Console](https://console.cloud.google.com)
+4. Create a new project
+5. Under "APIs and Services":
+   - Enable Google Docs API
+   - Navigate to OAuth consent screen
+   - Fill out App information and Developer contact information (content doesn't matter)
+
+### Chrome Extension Setup
+6. Open Chrome Canary and go to `chrome://extensions`
+7. Enable "Developer mode" (top right)
+8. Click "Load unpacked" and select the project directory
+9. Set up OAuth credentials:
+   - Navigate to credentials page
+   - Create new OAuth Client ID
+   - Set application type to "Chrome extension"
+   - Copy your extension ID from the extensions page
+   - Paste it into the Item ID field
+   - Create and copy the Client ID
+10. Update the repository:
+    - Open manifest.json
+    - Replace `PASTE_CLIENT_ID_HERE` with your Client ID
+    - Return to `chrome://extensions` and reload the extension
+    - (Note: Any errors at this stage won't affect the model)
+
+### Final Steps
+11. Open a Google Doc
+12. Locate the extension popup in the Chrome menu bar
+13. Enable the switch
+14. Look for the VeriFide button in the Google Docs Menu Bar
+15. Start typing to see the fact-checking in action!
 
 ## Usage
 
