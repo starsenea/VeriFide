@@ -15,7 +15,7 @@
     "https://language.googleapis.com/*"
   ],
   "oauth2": {
-    "client_id": "716615658241-udclqrgvt9g98mev2hs1lugbvgd0p3jl.apps.googleusercontent.com",
+    "client_id": "PASTE_CLIENT_ID_HERE",
     "scopes": [
       "https://www.googleapis.com/auth/documents.readonly",
       "https://www.googleapis.com/auth/cloud-language"
