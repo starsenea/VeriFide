@@ -12,9 +12,10 @@ A Chrome extension that provides real-time fact-checking for Google Docs using A
 ## Installation
 
 1. Clone this repository
-2. Open Chrome and navigate to `chrome://extensions/`
-3. Enable "Developer mode" in the top right
-4. Click "Load unpacked" and select the project directory
+2. Follow instructions to download the Prompt API from the given documentation. (https://developer.chrome.com/docs/extensions/ai/prompt-api)
+3. Open Chrome Canary and navigate to `chrome://extensions/`
+4. Enable "Developer mode" in the top right
+5. Click "Load unpacked" and select the project directory
 
 ## Usage
 
